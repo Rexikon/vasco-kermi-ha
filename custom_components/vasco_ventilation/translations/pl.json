@@ -52,10 +52,34 @@
       "filter_replace_interval": { "name": "Interwał wymiany filtra" }
     },
     "binary_sensor": {
-      "filter_dirty": { "name": "Filtr zabrudzony" },
-      "fault": { "name": "Usterka" },
-      "defrost": { "name": "Odszranianie aktywne" },
-      "fireplace_boost_active": { "name": "Tryb kominkowy aktywny" }
+      "filter_dirty": {
+        "name": "Filtr zabrudzony",
+        "state": {
+          "off": "Brak",
+          "on": "Tak"
+        }
+      },
+      "fault": {
+        "name": "Usterka",
+        "state": {
+          "off": "Brak",
+          "on": "Tak"
+        }
+      },
+      "defrost": {
+        "name": "Odszranianie aktywne",
+        "state": {
+          "off": "Nie",
+          "on": "Tak"
+        }
+      },
+      "fireplace_boost_active": {
+        "name": "Tryb kominkowy aktywny",
+        "state": {
+          "off": "Nie",
+          "on": "Tak"
+        }
+      }
     }
   }
 }

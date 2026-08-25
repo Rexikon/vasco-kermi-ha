@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -30,22 +29,25 @@ class VascoBinarySensorDescription(BinarySensorEntityDescription):
 
 
 BINARY_SENSOR_DESCRIPTIONS: tuple[VascoBinarySensorDescription, ...] = (
+    # No PROBLEM device_class: that forces HA's "OK"/"Problem" labels.
+    # Custom off/on translations render as Brak/Tak (None/Yes) instead.
     VascoBinarySensorDescription(
         key="filter_dirty",
         translation_key="filter_dirty",
-        device_class=BinarySensorDeviceClass.PROBLEM,
+        icon="mdi:air-filter",
         is_on_fn=lambda d: bool(d.get("filterDirty")),
     ),
     VascoBinarySensorDescription(
         key="fault",
         translation_key="fault",
-        device_class=BinarySensorDeviceClass.PROBLEM,
+        icon="mdi:alert-circle-outline",
         is_on_fn=lambda d: bool(d.get("faultStatus")),
     ),
     VascoBinarySensorDescription(
         key="defrost",
         translation_key="defrost",
         entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:snowflake-melt",
         is_on_fn=lambda d: bool(d.get("defrost")),
     ),
     # Read-only: the write path for fireplace boost hasn't been verified
@@ -56,6 +58,7 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[VascoBinarySensorDescription, ...] = (
         key="fireplace_boost_active",
         translation_key="fireplace_boost_active",
         entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:fireplace",
         is_on_fn=lambda d: bool(d.get("fireplaceModeStatus")),
     ),
 )

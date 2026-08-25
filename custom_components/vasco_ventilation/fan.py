@@ -38,10 +38,16 @@ class VascoFan(VascoEntity, FanEntity):
     The vendor API is level-based (Low/Medium/High/Auto/...), not a
     continuous percentage, so this uses preset_mode rather than
     percentage/speed_count -- matching how the official app presents it.
+
+    There is no confirmed off command, so TURN_ON/TURN_OFF are intentionally
+    omitted: the UI shows status + preset modes only.
     """
 
     _attr_supported_features = FanEntityFeature.PRESET_MODE
     _attr_name = None
+    # Without this, HA would auto-add TURN_ON/TURN_OFF because older fans
+    # implied those from method presence -- we deliberately do not support them.
+    _enable_turn_on_off_backwards_compatibility = False
 
     def __init__(self, coordinator: VascoCoordinator, serial: str) -> None:
         super().__init__(coordinator, serial)
@@ -60,8 +66,7 @@ class VascoFan(VascoEntity, FanEntity):
 
     @property
     def is_on(self) -> bool:
-        # A heat-recovery ventilation unit is always moving air at one
-        # level or another; there is no confirmed "off" write path.
+        # Always running at some level; no off write path exists.
         return True
 
     @property
@@ -82,18 +87,3 @@ class VascoFan(VascoEntity, FanEntity):
                 "see the README's Known limitations."
             )
         await self.coordinator.async_set_level(self._serial, level)
-
-    async def async_turn_on(
-        self,
-        percentage: int | None = None,
-        preset_mode: str | None = None,
-        **kwargs: Any,
-    ) -> None:
-        await self.async_set_preset_mode(preset_mode or _SETTABLE_PRESET_NAMES[0])
-
-    async def async_turn_off(self, **kwargs: Any) -> None:
-        raise ServiceValidationError(
-            "Turning the unit fully off isn't supported by this integration -- "
-            "there is no confirmed wire-protocol write for it. Pick a preset "
-            "mode instead."
-        )

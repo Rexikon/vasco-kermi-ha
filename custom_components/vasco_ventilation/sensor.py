@@ -75,6 +75,7 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         device_class=SensorDeviceClass.VOLUME_FLOW_RATE,
         native_unit_of_measurement=UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR,
         state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:home-import-outline",
         value_fn=lambda d: d.get("actualInletFlow"),
     ),
     VascoSensorDescription(
@@ -83,6 +84,7 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         device_class=SensorDeviceClass.VOLUME_FLOW_RATE,
         native_unit_of_measurement=UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR,
         state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:home-export-outline",
         value_fn=lambda d: d.get("actualExhaustFlow"),
     ),
     VascoSensorDescription(
@@ -91,6 +93,7 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:fan-plus",
         value_fn=lambda d: d.get("actualFanSpeedInlet"),
     ),
     VascoSensorDescription(
@@ -99,6 +102,7 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:fan-minus",
         value_fn=lambda d: d.get("actualFanSpeedExhaust"),
     ),
     VascoSensorDescription(
@@ -107,6 +111,7 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:valve",
         value_fn=lambda d: d.get("bypassPosition"),
     ),
     # Per the protocol notes: this looks like the *configured* replace
@@ -117,6 +122,7 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         translation_key="filter_replace_interval",
         native_unit_of_measurement=UnitOfTime.DAYS,
         entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:calendar-clock",
         value_fn=lambda d: d.get("filterReplaceTime"),
     ),
 )

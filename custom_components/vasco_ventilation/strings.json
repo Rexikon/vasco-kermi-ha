@@ -52,10 +52,34 @@
       "filter_replace_interval": { "name": "Filter replace interval" }
     },
     "binary_sensor": {
-      "filter_dirty": { "name": "Filter dirty" },
-      "fault": { "name": "Fault" },
-      "defrost": { "name": "Defrost active" },
-      "fireplace_boost_active": { "name": "Fireplace boost active" }
+      "filter_dirty": {
+        "name": "Filter dirty",
+        "state": {
+          "off": "None",
+          "on": "Yes"
+        }
+      },
+      "fault": {
+        "name": "Fault",
+        "state": {
+          "off": "None",
+          "on": "Yes"
+        }
+      },
+      "defrost": {
+        "name": "Defrost active",
+        "state": {
+          "off": "No",
+          "on": "Yes"
+        }
+      },
+      "fireplace_boost_active": {
+        "name": "Fireplace boost active",
+        "state": {
+          "off": "No",
+          "on": "Yes"
+        }
+      }
     }
   }
 }

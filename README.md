@@ -65,7 +65,9 @@ they were never confirmed to work correctly, rather than shipping a guess:
   write path for `fireplaceModeStatus`/`fireplaceModeTime` is documented by
   Vasco's own app behavior but was never captured and confirmed live.
 - **No "off" state.** A heat-recovery ventilation unit doesn't have a
-  confirmed off command; the fan entity always reports `on`.
+  confirmed off command. The fan entity is preset-only (Low/Medium/High) —
+  Home Assistant will not offer turn on/off; change the level via
+  `preset_mode` instead.
 - **Level changes are not always instant.** The vendor's own protocol is
   occasionally unreliable at the RF/bridge layer, independent of anything
   this integration does — the same behavior is visible in the official app.
@@ -91,8 +93,8 @@ very welcome.
 | `sensor` | Inlet / exhaust fan speed | % (diagnostic) |
 | `sensor` | Bypass position | % (diagnostic) |
 | `sensor` | Filter replace interval | days (diagnostic) |
-| `binary_sensor` | Filter dirty | problem |
-| `binary_sensor` | Fault | problem |
+| `binary_sensor` | Filter dirty | Brak / Tak |
+| `binary_sensor` | Fault | Brak / Tak |
 | `binary_sensor` | Defrost active | diagnostic |
 | `binary_sensor` | Fireplace boost active | diagnostic, read-only |
 
