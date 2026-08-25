@@ -1,4 +1,4 @@
-# Vasco Ventilation for Home Assistant
+# Vasco/Kermi Ventilation for Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![hassfest](https://github.com/Rexikon/vasco-kermi-ha/actions/workflows/validate.yml/badge.svg)](https://github.com/Rexikon/vasco-kermi-ha/actions/workflows/validate.yml)
@@ -32,7 +32,7 @@ endorsed, or supported by Vasco.
 
 1. In Home Assistant, go to **HACS → Integrations → ⋮ → Custom repositories**.
 2. Add `https://github.com/Rexikon/vasco-kermi-ha` with category **Integration**.
-3. Search for **Vasco Ventilation** in HACS and install it.
+3. Search for **Vasco/Kermi Ventilation** in HACS and install it.
 4. Restart Home Assistant.
 
 ### Manual
@@ -43,7 +43,7 @@ endorsed, or supported by Vasco.
 
 ## Setup
 
-**Settings → Devices & services → Add integration → Vasco Ventilation**,
+**Settings → Devices & services → Add integration → Vasco/Kermi Ventilation**,
 then enter the same email and password you use in the official Vasco app.
 
 The polling interval (default 60s, matching the official app) can be changed

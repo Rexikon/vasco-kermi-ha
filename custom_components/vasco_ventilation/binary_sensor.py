@@ -1,4 +1,4 @@
-"""Binary sensor platform for the Vasco Ventilation integration."""
+"""Binary sensor platform for the Vasco/Kermi Ventilation integration."""
 
 from __future__ import annotations
 

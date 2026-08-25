@@ -1,4 +1,4 @@
-"""Base entity for the Vasco Ventilation integration."""
+"""Base entity for the Vasco/Kermi Ventilation integration."""
 
 from __future__ import annotations
 

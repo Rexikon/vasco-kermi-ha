@@ -1,4 +1,4 @@
-"""DataUpdateCoordinator for the Vasco Ventilation integration."""
+"""DataUpdateCoordinator for the Vasco/Kermi Ventilation integration."""
 
 from __future__ import annotations
 

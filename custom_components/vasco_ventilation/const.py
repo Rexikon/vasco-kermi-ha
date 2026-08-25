@@ -1,4 +1,4 @@
-"""Constants for the Vasco Ventilation integration."""
+"""Constants for the Vasco/Kermi Ventilation integration."""
 
 from __future__ import annotations
 

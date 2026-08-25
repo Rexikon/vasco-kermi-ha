@@ -1,4 +1,4 @@
-"""Diagnostics support for the Vasco Ventilation integration."""
+"""Diagnostics support for the Vasco/Kermi Ventilation integration."""
 
 from __future__ import annotations
 

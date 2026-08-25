@@ -1,4 +1,4 @@
-"""Sensor platform for the Vasco Ventilation integration."""
+"""Sensor platform for the Vasco/Kermi Ventilation integration."""
 
 from __future__ import annotations
 

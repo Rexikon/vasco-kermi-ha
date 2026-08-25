@@ -1,4 +1,4 @@
-"""Config flow for the Vasco Ventilation integration."""
+"""Config flow for the Vasco/Kermi Ventilation integration."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ async def _validate_and_get_unique_id(hass: Any, data: dict[str, Any]) -> str:
 
 
 class VascoConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Vasco Ventilation."""
+    """Handle a config flow for Vasco/Kermi Ventilation."""
 
     VERSION = 1
 

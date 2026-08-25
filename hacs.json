@@ -1,5 +1,4 @@
 {
-  "name": "Vasco\\Kermi Ventilation",
-  "render_readme": true,
+  "name": "Vasco/Kermi Ventilation",
   "homeassistant": "2024.8.0"
 }

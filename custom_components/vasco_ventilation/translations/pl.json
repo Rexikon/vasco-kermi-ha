@@ -31,7 +31,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Opcje Vasco Ventilation",
+        "title": "Opcje Vasco/Kermi Ventilation",
         "data": {
           "scan_interval_seconds": "Częstotliwość odpytywania (sekundy)"
         }

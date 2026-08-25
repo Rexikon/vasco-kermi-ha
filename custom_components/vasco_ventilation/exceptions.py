@@ -1,4 +1,4 @@
-"""Exceptions for the Vasco Ventilation integration."""
+"""Exceptions for the Vasco/Kermi Ventilation integration."""
 
 from __future__ import annotations
 

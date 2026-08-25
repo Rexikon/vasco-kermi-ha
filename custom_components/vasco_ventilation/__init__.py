@@ -1,4 +1,4 @@
-"""The Vasco Ventilation integration."""
+"""The Vasco/Kermi Ventilation integration."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ PLATFORMS: list[Platform] = [Platform.FAN, Platform.SENSOR, Platform.BINARY_SENS
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Vasco Ventilation from a config entry."""
+    """Set up Vasco/Kermi Ventilation from a config entry."""
     session = async_get_clientsession(hass)
     client = VascoApiClient(session, entry.data[CONF_EMAIL], entry.data[CONF_PASSWORD])
 

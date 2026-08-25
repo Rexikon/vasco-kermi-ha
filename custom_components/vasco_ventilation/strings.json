@@ -31,7 +31,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Vasco Ventilation options",
+        "title": "Vasco/Kermi Ventilation options",
         "data": {
           "scan_interval_seconds": "Poll interval (seconds)"
         }
