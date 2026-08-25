@@ -1,0 +1,61 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect your Vasco account",
+        "description": "Enter the same email and password you use in the official Vasco app.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate Vasco",
+        "description": "The password for {email} is no longer accepted. Enter the current password.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid email or password.",
+      "cannot_connect": "Could not reach vasco.iqloud.eu. Check your internet connection and try again.",
+      "no_devices_found": "This account has no ventilation device.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Vasco account is already configured.",
+      "reauth_successful": "Reauthentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Vasco Ventilation options",
+        "data": {
+          "scan_interval_seconds": "Poll interval (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "indoor_temperature": { "name": "Indoor temperature" },
+      "outdoor_temperature": { "name": "Outdoor temperature" },
+      "supply_temperature": { "name": "Supply temperature" },
+      "exhaust_temperature": { "name": "Exhaust temperature" },
+      "inlet_flow": { "name": "Inlet airflow" },
+      "exhaust_flow": { "name": "Exhaust airflow" },
+      "inlet_fan_speed": { "name": "Inlet fan speed" },
+      "exhaust_fan_speed": { "name": "Exhaust fan speed" },
+      "bypass_position": { "name": "Bypass position" },
+      "filter_replace_interval": { "name": "Filter replace interval" }
+    },
+    "binary_sensor": {
+      "filter_dirty": { "name": "Filter dirty" },
+      "fault": { "name": "Fault" },
+      "defrost": { "name": "Defrost active" },
+      "fireplace_boost_active": { "name": "Fireplace boost active" }
+    }
+  }
+}

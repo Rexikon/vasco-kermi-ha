@@ -1,0 +1,94 @@
+"""DataUpdateCoordinator for the Vasco Ventilation integration."""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from datetime import timedelta
+from typing import Any
+
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from .api import VascoApiClient, ventilation_devices
+from .const import DOMAIN
+from .exceptions import VascoAuthError, VascoError, VascoNoDevicesError
+
+_LOGGER = logging.getLogger(__name__)
+
+# How long / how often to poll after a write, to reflect the change in the
+# UI close to as fast as the official app does (~10s for a real success),
+# without hammering the API. Independent of the regular scan_interval.
+_CONFIRM_POLL_ATTEMPTS = 6
+_CONFIRM_POLL_DELAY = 3
+
+
+class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+    """Polls getaccountconfiguration and mediates writes to the unit."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        client: VascoApiClient,
+        update_interval: timedelta,
+    ) -> None:
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=update_interval,
+        )
+        self.client = client
+
+    async def _async_update_data(self) -> dict[str, Any]:
+        try:
+            return await self.client.async_get_account_configuration()
+        except VascoAuthError as err:
+            raise ConfigEntryAuthFailed(str(err)) from err
+        except VascoError as err:
+            raise UpdateFailed(str(err)) from err
+
+    def device_by_serial(self, serial: str) -> dict[str, Any]:
+        """Look up a ventilation device in the last-known configuration."""
+        for device in ventilation_devices(self.data):
+            if device.get("serial") == serial:
+                return device
+        raise VascoNoDevicesError(f"device {serial!r} not found in account configuration")
+
+    async def async_set_level(self, serial: str, level: int) -> None:
+        """Write a new level and poll briefly to reflect it quickly.
+
+        This does not raise if the unit never actually applies the level --
+        that's a known, unresolved reliability limitation of the underlying
+        protocol (see README), not something a HA integration can paper
+        over. It logs a warning instead so the failure is visible without
+        breaking the service call.
+        """
+        device = self.device_by_serial(serial)
+        await self.client.async_set_level(self.data, device, level)
+
+        for attempt in range(_CONFIRM_POLL_ATTEMPTS):
+            await asyncio.sleep(_CONFIRM_POLL_DELAY)
+            try:
+                config = await self.client.async_get_account_configuration()
+            except VascoError as err:
+                _LOGGER.debug("poll %s/%s after level write failed: %s", attempt + 1, _CONFIRM_POLL_ATTEMPTS, err)
+                continue
+            self.async_set_updated_data(config)
+            try:
+                if self.device_by_serial(serial).get("level") == level:
+                    return
+            except VascoNoDevicesError:
+                return
+
+        _LOGGER.warning(
+            "Vasco unit %s did not confirm reaching level %s within %ss. "
+            "The write was acknowledged by the cloud but the physical unit "
+            "may not have applied it -- this is a known intermittent "
+            "reliability issue in the vendor's protocol, not necessarily a "
+            "bug here. Check the official app.",
+            serial,
+            level,
+            _CONFIRM_POLL_ATTEMPTS * _CONFIRM_POLL_DELAY,
+        )

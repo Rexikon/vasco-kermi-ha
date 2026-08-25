@@ -1,0 +1,61 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Połącz konto Vasco",
+        "description": "Podaj ten sam e-mail i hasło, którego używasz w oficjalnej aplikacji Vasco.",
+        "data": {
+          "email": "E-mail",
+          "password": "Hasło"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ponowna autoryzacja Vasco",
+        "description": "Hasło dla {email} przestało być akceptowane. Podaj aktualne hasło.",
+        "data": {
+          "password": "Hasło"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Nieprawidłowy e-mail lub hasło.",
+      "cannot_connect": "Nie udało się połączyć z vasco.iqloud.eu. Sprawdź połączenie z internetem i spróbuj ponownie.",
+      "no_devices_found": "To konto nie ma żadnego urządzenia wentylacyjnego.",
+      "unknown": "Nieoczekiwany błąd."
+    },
+    "abort": {
+      "already_configured": "To konto Vasco jest już skonfigurowane.",
+      "reauth_successful": "Ponowna autoryzacja zakończona sukcesem."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opcje Vasco Ventilation",
+        "data": {
+          "scan_interval_seconds": "Częstotliwość odpytywania (sekundy)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "indoor_temperature": { "name": "Temperatura wewnętrzna" },
+      "outdoor_temperature": { "name": "Temperatura zewnętrzna" },
+      "supply_temperature": { "name": "Temperatura nawiewu" },
+      "exhaust_temperature": { "name": "Temperatura wywiewu" },
+      "inlet_flow": { "name": "Przepływ nawiewu" },
+      "exhaust_flow": { "name": "Przepływ wywiewu" },
+      "inlet_fan_speed": { "name": "Prędkość wentylatora nawiewu" },
+      "exhaust_fan_speed": { "name": "Prędkość wentylatora wywiewu" },
+      "bypass_position": { "name": "Pozycja bypassu" },
+      "filter_replace_interval": { "name": "Interwał wymiany filtra" }
+    },
+    "binary_sensor": {
+      "filter_dirty": { "name": "Filtr zabrudzony" },
+      "fault": { "name": "Usterka" },
+      "defrost": { "name": "Odszranianie aktywne" },
+      "fireplace_boost_active": { "name": "Tryb kominkowy aktywny" }
+    }
+  }
+}
