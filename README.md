@@ -26,6 +26,7 @@ endorsed, or supported by Vasco.
   integration's Options).
 
 ## Installation
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Rexikon&repository=vasco-kermi-ha&category=Integration)
 
 ### HACS (recommended)
 
