@@ -1,12 +1,12 @@
 {
   "domain": "vasco_ventilation",
-  "name": "Vasco Ventilation",
+  "name": "Vasco/Kermi Ventilation",
   "codeowners": ["@Rexikon"],
   "config_flow": true,
   "documentation": "https://github.com/Rexikon/vasco-kermi-ha",
-  "issue_tracker": "https://github.com/Rexikon/vasco-kermi-ha/issues",
-  "iot_class": "cloud_polling",
   "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/Rexikon/vasco-kermi-ha/issues",
   "requirements": [],
   "version": "0.1.0"
 }

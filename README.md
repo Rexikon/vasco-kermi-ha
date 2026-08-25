@@ -2,6 +2,7 @@
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![hassfest](https://github.com/Rexikon/vasco-kermi-ha/actions/workflows/validate.yml/badge.svg)](https://github.com/Rexikon/vasco-kermi-ha/actions/workflows/validate.yml)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Rexikon&repository=vasco-kermi-ha&category=Integration)
 
 A [Home Assistant](https://www.home-assistant.io/) integration for Vasco
 heat-recovery ventilation units (tested against a **VMD-17RPS01**, sold as
