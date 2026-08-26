@@ -52,7 +52,7 @@ WIRE_LEVEL_OFFSET: dict[int, int] = {
 
 # The only presets this integration will actually write. Reading back a
 # level outside this set (the unit was put into Auto/Holidays/Guests from
-# the official app, or a "boost" state) is still displayed -- see fan.py.
+# the official app, or a "boost" state) is still displayed -- see select.py.
 SETTABLE_LEVELS: tuple[int, ...] = (LEVEL_LOW, LEVEL_MEDIUM, LEVEL_HIGH)
 
 PRODUCT_CATEGORY_VENTILATION = "VENTILATION"

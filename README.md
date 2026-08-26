@@ -14,7 +14,9 @@ endorsed, or supported by Vasco.
 
 ## Features
 
-- **Fan control** — set the ventilation level to Low, Medium, or High.
+- **Ventilation level control** — a select entity for Low, Medium, or High,
+  with its state (and history) tracked like any other entity — no on/off
+  toggle, since the unit doesn't support one.
 - **Sensors** — indoor/outdoor/supply/exhaust temperature, inlet/exhaust
   airflow (m³/h), inlet/exhaust fan speed (%), bypass position (%), filter
   replace interval.
@@ -66,9 +68,10 @@ they were never confirmed to work correctly, rather than shipping a guess:
   write path for `fireplaceModeStatus`/`fireplaceModeTime` is documented by
   Vasco's own app behavior but was never captured and confirmed live.
 - **No "off" state.** A heat-recovery ventilation unit doesn't have a
-  confirmed off command. The fan entity is preset-only (Low/Medium/High) —
-  Home Assistant will not offer turn on/off; change the level via
-  `preset_mode` instead.
+  confirmed off command, so the level is exposed as a `select` entity
+  rather than a `fan` — Home Assistant would otherwise show an on/off
+  toggle the unit can't act on. Change the level via the select's dropdown
+  instead.
 - **Level changes are not always instant.** The vendor's own protocol is
   occasionally unreliable at the RF/bridge layer, independent of anything
   this integration does — the same behavior is visible in the official app.
@@ -88,7 +91,7 @@ very welcome.
 
 | Platform | Entity | Notes |
 |---|---|---|
-| `fan` | Ventilation unit | `preset_mode`: Low / Medium / High |
+| `select` | Ventilation level | Options: Low / Medium / High (Auto / Holidays / Guests shown read-only if the unit is in one of those) |
 | `sensor` | Indoor / outdoor / supply / exhaust temperature | °C |
 | `sensor` | Inlet / exhaust airflow | m³/h |
 | `sensor` | Inlet / exhaust fan speed | % (diagnostic) |

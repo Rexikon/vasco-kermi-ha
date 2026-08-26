@@ -8,6 +8,7 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import VascoApiClient
@@ -16,7 +17,7 @@ from .coordinator import VascoCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.FAN, Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS: list[Platform] = [Platform.SELECT, Platform.SENSOR, Platform.BINARY_SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -40,6 +41,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
+    _async_remove_stale_fan_entities(hass, entry)
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -55,3 +58,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload the entry when its options change (e.g. scan interval)."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+def _async_remove_stale_fan_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop the fan entity left behind by versions before 0.2.0.
+
+    0.2.0 replaced it with a select entity, since Home Assistant always
+    renders a fan's entity row with an on/off toggle the unit doesn't
+    support. Without this, the orphaned fan entity would linger in the
+    registry forever, permanently unavailable.
+    """
+    entity_registry = er.async_get(hass)
+    for entry_entity in er.async_entries_for_config_entry(entity_registry, entry.entry_id):
+        if entry_entity.domain == "fan":
+            entity_registry.async_remove(entry_entity.entity_id)
