@@ -29,6 +29,41 @@ from .coordinator import VascoCoordinator
 from .entity import VascoEntity
 
 
+def _first(device: dict[str, Any], *keys: str) -> Any:
+    """Return the first non-None value among keys (field names differ per model)."""
+    return next((device[k] for k in keys if device.get(k) is not None), None)
+
+
+# Fan-speed field names differ between models: X500 uses actualFanSpeedInlet,
+# the 225 Compact uses actualInletFanSpeed.
+_INLET_SPEED_KEYS = ("actualFanSpeedInlet", "actualInletFanSpeed")
+_EXHAUST_SPEED_KEYS = ("actualFanSpeedExhaust", "actualExhaustFanSpeed")
+
+
+def _flow(
+    device: dict[str, Any],
+    speed_keys: tuple[str, ...],
+    max_key: str,
+    flow_key: str,
+) -> Any:
+    """Airflow in m3/h the way the official app shows it.
+
+    The app computes fan speed (%) x the flow configured for 100 % / 100.
+    That maximum is qHighSupply / qHighExhaust on X-series units (shown in
+    the app as "Nawiew/Wyciag do pomieszczen", e.g. 400 / 405 m3/h on an
+    X425) and absoluteMaximumFlow on others (225 Compact), with qMax (the
+    model's rated maximum) as a last resort. The raw actual*Flow field is
+    not m3/h on most models (X425 reports 8.88 / 22.22 at 26 / 27 %, D275
+    reports 10 while the app shows 165.5), so it is only used when the
+    inputs for the computation are missing.
+    """
+    speed = _first(device, *speed_keys)
+    maximum = _first(device, max_key, "absoluteMaximumFlow", "qMax")
+    if speed is not None and maximum:
+        return round(speed * maximum / 100, 1)
+    return device.get(flow_key)
+
+
 @dataclass(frozen=True, kw_only=True)
 class VascoSensorDescription(SensorEntityDescription):
     """Describes a Vasco sensor and how to read it off a device dict."""
@@ -76,7 +111,7 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:home-import-outline",
-        value_fn=lambda d: d.get("actualInletFlow"),
+        value_fn=lambda d: _flow(d, _INLET_SPEED_KEYS, "qHighSupply", "actualInletFlow"),
     ),
     VascoSensorDescription(
         key="exhaust_flow",
@@ -85,7 +120,7 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:home-export-outline",
-        value_fn=lambda d: d.get("actualExhaustFlow"),
+        value_fn=lambda d: _flow(d, _EXHAUST_SPEED_KEYS, "qHighExhaust", "actualExhaustFlow"),
     ),
     VascoSensorDescription(
         key="inlet_fan_speed",
@@ -94,7 +129,7 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:fan-plus",
-        value_fn=lambda d: d.get("actualFanSpeedInlet"),
+        value_fn=lambda d: _first(d, *_INLET_SPEED_KEYS),
     ),
     VascoSensorDescription(
         key="exhaust_fan_speed",
@@ -103,7 +138,7 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:fan-minus",
-        value_fn=lambda d: d.get("actualFanSpeedExhaust"),
+        value_fn=lambda d: _first(d, *_EXHAUST_SPEED_KEYS),
     ),
     VascoSensorDescription(
         key="bypass_position",

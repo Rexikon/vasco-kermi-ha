@@ -12,13 +12,17 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import ventilation_devices
-from .const import DOMAIN, LEVEL_NAMES, NAME_TO_LEVEL, SETTABLE_LEVELS
+from .const import DOMAIN, LEVEL_NAMES, NAME_TO_LEVEL, SETTABLE_LEVELS, WIRE_LEVEL_OFFSET
 from .coordinator import VascoCoordinator
 from .entity import VascoEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 _SETTABLE_LEVEL_NAMES = [LEVEL_NAMES[level] for level in SETTABLE_LEVELS]
+
+# nextValue (like homeModes[].devices[].value) uses the wire encoding
+# (2/3/4 = Low/Medium/High), not the cloud level enum.
+_WIRE_TO_LEVEL = {wire: level for level, wire in WIRE_LEVEL_OFFSET.items()}
 
 
 async def async_setup_entry(
@@ -65,7 +69,7 @@ class VascoLevelSelect(VascoEntity, SelectEntity):
         device = self.device
         return {
             "control_mode": device.get("controlMode"),
-            "next_scheduled_level": LEVEL_NAMES.get(device.get("nextValue")),
+            "next_scheduled_level": LEVEL_NAMES.get(_WIRE_TO_LEVEL.get(device.get("nextValue"))),
         }
 
     async def async_select_option(self, option: str) -> None:
