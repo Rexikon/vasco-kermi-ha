@@ -64,6 +64,17 @@ def _flow(
     return device.get(flow_key)
 
 
+# Airios controllers report 0xEF (239) for a value whose hardware is absent
+# (e.g. no preheater fitted, or outdoorHumidity on units without the sensor).
+_NOT_PRESENT = 0xEF
+
+
+def _preheater(device: dict[str, Any]) -> Any:
+    """Preheater demand in %, or None when no preheater is fitted."""
+    value = device.get("preHeaterDemand")
+    return None if value == _NOT_PRESENT else value
+
+
 @dataclass(frozen=True, kw_only=True)
 class VascoSensorDescription(SensorEntityDescription):
     """Describes a Vasco sensor and how to read it off a device dict."""
@@ -148,6 +159,15 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:valve",
         value_fn=lambda d: d.get("bypassPosition"),
+    ),
+    VascoSensorDescription(
+        key="preheater_demand",
+        translation_key="preheater_demand",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:radiator",
+        value_fn=_preheater,
     ),
     # Per the protocol notes: this looks like the *configured* replace
     # interval, not a live countdown -- named accordingly so it doesn't

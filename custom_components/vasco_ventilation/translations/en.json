@@ -49,6 +49,7 @@
       "inlet_fan_speed": { "name": "Inlet fan speed" },
       "exhaust_fan_speed": { "name": "Exhaust fan speed" },
       "bypass_position": { "name": "Bypass position" },
+      "preheater_demand": { "name": "Preheater demand" },
       "filter_replace_interval": { "name": "Filter replace interval" }
     },
     "binary_sensor": {
