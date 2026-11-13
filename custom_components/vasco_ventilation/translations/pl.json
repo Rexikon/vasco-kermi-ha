@@ -50,7 +50,12 @@
       "exhaust_fan_speed": { "name": "Prędkość wentylatora wywiewu" },
       "bypass_position": { "name": "Pozycja bypassu" },
       "preheater_demand": { "name": "Grzałka wstępna" },
+      "boost_end": { "name": "Koniec regulatora" },
       "filter_replace_interval": { "name": "Interwał wymiany filtra" }
+    },
+    "button": {
+      "boost": { "name": "Regulator" },
+      "fireplace": { "name": "Tryb kominkowy" }
     },
     "binary_sensor": {
       "filter_dirty": {

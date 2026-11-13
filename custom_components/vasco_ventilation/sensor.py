@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -24,7 +25,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import ventilation_devices
-from .const import DOMAIN
+from .const import DOMAIN, LEVEL_BOOST
 from .coordinator import VascoCoordinator
 from .entity import VascoEntity
 
@@ -73,6 +74,18 @@ def _preheater(device: dict[str, Any]) -> Any:
     """Preheater demand in %, or None when no preheater is fitted."""
     value = device.get("preHeaterDemand")
     return None if value == _NOT_PRESENT else value
+
+
+def _boost_end(device: dict[str, Any]) -> datetime | None:
+    """When the running boost ends, from manualSettingActiveTill (epoch ms).
+
+    Only meaningful while the unit is in Boost: the field keeps the old
+    deadline after a boost is cancelled by selecting another level.
+    """
+    till = device.get("manualSettingActiveTill")
+    if device.get("level") != LEVEL_BOOST or not isinstance(till, int) or till <= 0:
+        return None
+    return datetime.fromtimestamp(till / 1000, tz=UTC)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -168,6 +181,13 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:radiator",
         value_fn=_preheater,
+    ),
+    VascoSensorDescription(
+        key="boost_end",
+        translation_key="boost_end",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:timer-outline",
+        value_fn=_boost_end,
     ),
     # Per the protocol notes: this looks like the *configured* replace
     # interval, not a live countdown -- named accordingly so it doesn't

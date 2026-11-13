@@ -17,43 +17,65 @@ CONF_SCAN_INTERVAL_SECONDS = "scan_interval_seconds"
 # Confirmed live against a real VMD-17RPS01 ("Vasco X500") unit via MITM
 # capture of the official app (2026-08-25): the requestedLevel enum used by
 # the REST/account API is NOT the raw value the bridge expects on its
-# writeData command -- the wire value is the cloud level + 1. Wire value 1
-# is reserved for something else (observed: it resets manualSettingActiveTill
-# to 0 / hands control back to the schedule, it does not set a fan speed).
+# writeData command.
 #
-# Only levels 1-3 have a confirmed wire mapping. Auto (4), Holidays (6) and
-# Guests (7) exist in the account API but their wire encoding has not been
-# verified against real traffic -- don't guess, they're deliberately left
-# out of what this integration can *set*.
+# Mapped live on an X425 (VMD-17RPS01) by writing each wire value and
+# reading the cloud `level` back, cross-checked against what the official
+# app shows (2026-11-13):
+#
+#   wire 2 / 3 / 4 -> level 1 / 2 / 3   Low / Medium / High
+#   wire 6         -> level 4           Holidays ("Wakacje", speedRatio*6)
+#   wire 7         -> level 5           Guests ("Goscie", speedRatio*7)
+#   wire 1, 5, 8   -> acknowledged by the bridge, ignored by the unit
+#
+# Wire 5 is what the official app sends for "Automatic"; the X425 without a
+# humidity/CO2 sensor ignores it, so Auto is not offered here.
+#
+# The app's timed boost ("Regulator") is not a requestedLevel write at all:
+# it writes overrideTimeSpeed3 = minutes, and the unit reports level 13
+# (High, timed) until the timer runs out or another level is written.
 LEVEL_LOW = 1
 LEVEL_MEDIUM = 2
 LEVEL_HIGH = 3
-LEVEL_AUTO = 4
-LEVEL_HOLIDAYS = 6
-LEVEL_GUESTS = 7
+LEVEL_HOLIDAYS = 4
+LEVEL_GUESTS = 5
+LEVEL_BOOST = 13
 
 LEVEL_NAMES: dict[int, str] = {
     LEVEL_LOW: "Low",
     LEVEL_MEDIUM: "Medium",
     LEVEL_HIGH: "High",
-    LEVEL_AUTO: "Auto",
     LEVEL_HOLIDAYS: "Holidays",
     LEVEL_GUESTS: "Guests",
+    LEVEL_BOOST: "Boost",
 }
 NAME_TO_LEVEL: dict[str, int] = {name: level for level, name in LEVEL_NAMES.items()}
 
-# Cloud requestedLevel enum -> raw wire value sent in the writeData frame.
-# Confirmed for 1/2/3 only -- see the note above.
+# Cloud level -> raw wire value sent in the requestedLevel writeData frame.
 WIRE_LEVEL_OFFSET: dict[int, int] = {
     LEVEL_LOW: 2,
     LEVEL_MEDIUM: 3,
     LEVEL_HIGH: 4,
+    LEVEL_HOLIDAYS: 6,
+    LEVEL_GUESTS: 7,
 }
 
-# The only presets this integration will actually write. Reading back a
-# level outside this set (the unit was put into Auto/Holidays/Guests from
-# the official app, or a "boost" state) is still displayed -- see select.py.
-SETTABLE_LEVELS: tuple[int, ...] = (LEVEL_LOW, LEVEL_MEDIUM, LEVEL_HIGH)
+# The presets this integration writes through the select entity. Boost is
+# shown read-only there and started with its own button (see button.py).
+SETTABLE_LEVELS: tuple[int, ...] = (
+    LEVEL_LOW,
+    LEVEL_MEDIUM,
+    LEVEL_HIGH,
+    LEVEL_HOLIDAYS,
+    LEVEL_GUESTS,
+)
+
+# Timed functions: writing the duration in minutes to these parameters
+# starts them, exactly as the official app does. The unit ends them itself.
+PARAM_BOOST_MINUTES = "overrideTimeSpeed3"
+PARAM_FIREPLACE_MINUTES = "fireplaceModeTime"
+DEFAULT_BOOST_MINUTES = 30
+DEFAULT_FIREPLACE_MINUTES = 10
 
 PRODUCT_CATEGORY_VENTILATION = "VENTILATION"
 

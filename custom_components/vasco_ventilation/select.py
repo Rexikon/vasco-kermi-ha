@@ -48,9 +48,9 @@ class VascoLevelSelect(VascoEntity, SelectEntity):
     instead of behind the more-info dialog.
 
     All known levels are listed as options so the current one is always a
-    valid state -- e.g. the unit was put into Auto from the official app --
-    but only Low/Medium/High are accepted by async_select_option; see
-    SETTABLE_LEVELS in const.py.
+    valid state. Boost (the app's timed "Regulator") is shown but not
+    selectable here: it is started with its own button and ends itself, or
+    when another level is selected. See SETTABLE_LEVELS in const.py.
     """
 
     _attr_name = None
@@ -76,9 +76,8 @@ class VascoLevelSelect(VascoEntity, SelectEntity):
         level = NAME_TO_LEVEL.get(option)
         if level is None or level not in SETTABLE_LEVELS:
             raise ServiceValidationError(
-                f"'{option}' is not a settable level on this integration "
-                f"(supported: {', '.join(_SETTABLE_LEVEL_NAMES)}). Its wire-protocol "
-                "encoding hasn't been confirmed against real device traffic -- "
-                "see the README's Known limitations."
+                f"'{option}' can't be selected here "
+                f"(supported: {', '.join(_SETTABLE_LEVEL_NAMES)}). "
+                "Use the Boost button to start a timed boost."
             )
         await self.coordinator.async_set_level(self._serial, level)

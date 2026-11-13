@@ -14,14 +14,17 @@ endorsed, or supported by Vasco.
 
 ## Features
 
-- **Ventilation level control** — a select entity for Low, Medium, or High,
-  with its state (and history) tracked like any other entity — no on/off
-  toggle, since the unit doesn't support one.
+- **Ventilation level control** — a select entity for Low, Medium, High,
+  Holidays, or Guests, with its state (and history) tracked like any other
+  entity — no on/off toggle, since the unit doesn't support one.
+- **Timed functions** — Boost and Fireplace mode buttons, the same as the
+  official app's "Regulator" and "Kominek", using the duration last set in
+  the app.
 - **Sensors** — indoor/outdoor/supply/exhaust temperature, inlet/exhaust
-  airflow (m³/h), inlet/exhaust fan speed (%), bypass position (%), filter
-  replace interval.
-- **Binary sensors** — filter dirty, fault, defrost active, fireplace boost
-  active (read-only).
+  airflow (m³/h), inlet/exhaust fan speed (%), bypass position (%), preheater
+  demand (%), boost end time, filter replace interval.
+- **Binary sensors** — filter dirty, fault, defrost active, fireplace mode
+  active.
 - **Diagnostics** — download a redacted diagnostics dump from the entry's
   three-dot menu for bug reports.
 - Polls the account once a minute by default (configurable in the
@@ -57,16 +60,13 @@ This protocol was reverse-engineered by capturing the official app's real
 network traffic — some things are deliberately **not** implemented because
 they were never confirmed to work correctly, rather than shipping a guess:
 
-- **Only Low/Medium/High are settable.** Auto, Holidays, and Guests presets
-  exist in the cloud API but their low-level wire encoding hasn't been
-  captured from a real, working transition. Setting one of these from the
-  official app still displays correctly as read-only state, but the
-  integration will refuse to *write* it (`ServiceValidationError` with an
-  explanation) rather than send an unverified value at your physical unit.
-- **No fireplace boost control.** The device reports whether fireplace boost
-  is active (a binary sensor), but there's no switch to trigger it — the
-  write path for `fireplaceModeStatus`/`fireplaceModeTime` is documented by
-  Vasco's own app behavior but was never captured and confirmed live.
+- **No Auto mode.** The official app's "Automatic" sends a value that an
+  X425 without a humidity/CO2 sensor ignores, so it isn't offered.
+- **Holidays, Guests, Boost and Fireplace mode were mapped on an X425**
+  (`VMD-17RPS01`). Other models may encode them differently; reports from
+  other units are welcome.
+- **Fireplace mode can't be stopped early.** The unit ends it when its time
+  is up; changing the level meanwhile works but doesn't end it.
 - **No "off" state.** A heat-recovery ventilation unit doesn't have a
   confirmed off command, so the level is exposed as a `select` entity
   rather than a `fan` — Home Assistant would otherwise show an on/off
@@ -91,16 +91,20 @@ very welcome.
 
 | Platform | Entity | Notes |
 |---|---|---|
-| `select` | Ventilation level | Options: Low / Medium / High (Auto / Holidays / Guests shown read-only if the unit is in one of those) |
+| `select` | Ventilation level | Options: Low / Medium / High / Holidays / Guests (Boost shown read-only while running) |
+| `button` | Boost | timed High (the app's "Regulator"); select a level to stop it early |
+| `button` | Fireplace mode | timed overpressure (the app's "Kominek") |
 | `sensor` | Indoor / outdoor / supply / exhaust temperature | °C |
 | `sensor` | Inlet / exhaust airflow | m³/h |
 | `sensor` | Inlet / exhaust fan speed | % (diagnostic) |
 | `sensor` | Bypass position | % (diagnostic) |
+| `sensor` | Preheater demand | % (diagnostic), unknown when no preheater is fitted |
+| `sensor` | Boost ends | timestamp, only while Boost runs |
 | `sensor` | Filter replace interval | days (diagnostic) |
 | `binary_sensor` | Filter dirty | Brak / Tak |
 | `binary_sensor` | Fault | Brak / Tak |
 | `binary_sensor` | Defrost active | diagnostic |
-| `binary_sensor` | Fireplace boost active | diagnostic, read-only |
+| `binary_sensor` | Fireplace boost active | diagnostic |
 
 ## Support
 

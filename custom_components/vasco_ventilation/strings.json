@@ -50,7 +50,12 @@
       "exhaust_fan_speed": { "name": "Exhaust fan speed" },
       "bypass_position": { "name": "Bypass position" },
       "preheater_demand": { "name": "Preheater demand" },
+      "boost_end": { "name": "Boost ends" },
       "filter_replace_interval": { "name": "Filter replace interval" }
+    },
+    "button": {
+      "boost": { "name": "Boost" },
+      "fireplace": { "name": "Fireplace mode" }
     },
     "binary_sensor": {
       "filter_dirty": {
