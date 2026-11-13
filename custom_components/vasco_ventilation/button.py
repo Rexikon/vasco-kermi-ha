@@ -2,8 +2,9 @@
 
 The official app starts its timed functions by writing the duration in
 minutes to a parameter; the unit runs the function and ends it itself.
-Both buttons reuse the duration the unit last ran with, so a duration
-changed in the official app carries over here.
+Both buttons write the duration the unit currently holds: for Boost that
+is its configured boost time (the app never asks), for Fireplace mode the
+time last picked in the app.
 """
 
 from __future__ import annotations

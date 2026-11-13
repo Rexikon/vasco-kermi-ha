@@ -53,6 +53,20 @@
       "boost_end": { "name": "Boost ends" },
       "filter_replace_interval": { "name": "Filter replace interval" }
     },
+    "select": {
+      "manual_duration": {
+        "name": "Manual level duration",
+        "state": {
+          "until_schedule": "Until next schedule change",
+          "permanent": "Permanently",
+          "1h": "1 hour",
+          "2h": "2 hours",
+          "4h": "4 hours",
+          "8h": "8 hours",
+          "24h": "24 hours"
+        }
+      }
+    },
     "button": {
       "boost": { "name": "Boost" },
       "fireplace": { "name": "Fireplace mode" }

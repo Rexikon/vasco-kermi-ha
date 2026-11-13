@@ -70,6 +70,27 @@ SETTABLE_LEVELS: tuple[int, ...] = (
     LEVEL_GUESTS,
 )
 
+# manualSettingActiveTill values sent with a level write: how long the
+# level holds before the schedule takes over again. Any other value is an
+# end time in epoch milliseconds. Confirmed live on an X425: the cloud
+# reschedules the next event accordingly and the unit returns to the
+# schedule's level when a timed level ends.
+MANUAL_UNTIL_NEXT_SCHEDULE = 0
+MANUAL_PERMANENT = -1
+
+# Options of the "manual level duration" select -> minutes (None = special).
+MANUAL_DURATION_UNTIL_SCHEDULE = "until_schedule"
+MANUAL_DURATION_PERMANENT = "permanent"
+MANUAL_DURATION_MINUTES: dict[str, int | None] = {
+    MANUAL_DURATION_UNTIL_SCHEDULE: None,
+    MANUAL_DURATION_PERMANENT: None,
+    "1h": 60,
+    "2h": 120,
+    "4h": 240,
+    "8h": 480,
+    "24h": 1440,
+}
+
 # Timed functions: writing the duration in minutes to these parameters
 # starts them, exactly as the official app does. The unit ends them itself.
 PARAM_BOOST_MINUTES = "overrideTimeSpeed3"

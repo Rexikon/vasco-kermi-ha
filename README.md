@@ -17,9 +17,12 @@ endorsed, or supported by Vasco.
 - **Ventilation level control** — a select entity for Low, Medium, High,
   Holidays, or Guests, with its state (and history) tracked like any other
   entity — no on/off toggle, since the unit doesn't support one.
+- **Manual level duration** — like the app's prompt: until the next schedule
+  change (default), permanently, or for 1/2/4/8/24 hours.
 - **Timed functions** — Boost and Fireplace mode buttons, the same as the
-  official app's "Regulator" and "Kominek", using the duration last set in
-  the app.
+  official app's "Regulator" and "Kominek". Boost runs for the time stored
+  in the unit (30 min by default); Fireplace mode for the time last picked
+  in the app.
 - **Sensors** — indoor/outdoor/supply/exhaust temperature, inlet/exhaust
   airflow (m³/h), inlet/exhaust fan speed (%), bypass position (%), preheater
   demand (%), boost end time, filter replace interval.
@@ -79,10 +82,10 @@ they were never confirmed to work correctly, rather than shipping a guess:
   unit doesn't confirm within that window, a warning is logged (the entity
   will still update whenever it *does* catch up on the next regular poll).
 - **`controlMode` is intentionally left untouched.** The official app never
-  switches it to `"manual"` and neither does this integration. This means a
-  schedule configured in the Vasco app can, in principle, reassert its own
-  level after a manual change here — this was observed once during protocol
-  investigation and isn't fully characterized.
+  switches it to `"manual"` and neither does this integration. How long a
+  manual level holds is set by `manualSettingActiveTill` instead (0 = until
+  the next schedule change, -1 = permanently, otherwise an end time in epoch
+  ms), which the "Manual level duration" select controls.
 
 Contributions that nail down any of the above with a real MITM capture are
 very welcome.
@@ -92,6 +95,7 @@ very welcome.
 | Platform | Entity | Notes |
 |---|---|---|
 | `select` | Ventilation level | Options: Low / Medium / High / Holidays / Guests (Boost shown read-only while running) |
+| `select` | Manual level duration | config: until next schedule change / permanently / 1–24 h; applies to the next level change |
 | `button` | Boost | timed High (the app's "Regulator"); select a level to stop it early |
 | `button` | Fireplace mode | timed overpressure (the app's "Kominek") |
 | `sensor` | Indoor / outdoor / supply / exhaust temperature | °C |

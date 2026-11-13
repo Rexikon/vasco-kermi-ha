@@ -29,6 +29,7 @@ import aiohttp
 
 from .const import (
     API_BASE,
+    MANUAL_UNTIL_NEXT_SCHEDULE,
     PRODUCT_CATEGORY_VENTILATION,
     USER_AGENT,
     WIRE_LEVEL_OFFSET,
@@ -113,11 +114,26 @@ class VascoApiClient:
         await self._api_post("setdeviceproperties", [device])
 
     async def async_set_level(
-        self, config: dict[str, Any], device: dict[str, Any], level: int
+        self,
+        config: dict[str, Any],
+        device: dict[str, Any],
+        level: int,
+        manual_till: int = MANUAL_UNTIL_NEXT_SCHEDULE,
     ) -> None:
-        """Write a ventilation level to the unit over the bridge WebSocket."""
+        """Write a ventilation level to the unit over the bridge WebSocket.
+
+        manual_till is how long the level holds, the same choice the
+        official app offers: MANUAL_UNTIL_NEXT_SCHEDULE (0), MANUAL_PERMANENT
+        (-1), or an end time in epoch milliseconds. It must always be sent
+        explicitly: the field keeps its old value after a boost or a timed
+        level has ended, and echoing that back makes the new level end at
+        the old deadline.
+        """
         await self.async_write_parameter(
-            config, device, "requestedLevel", WIRE_LEVEL_OFFSET.get(level, level)
+            config,
+            {**device, "manualSettingActiveTill": manual_till},
+            "requestedLevel",
+            WIRE_LEVEL_OFFSET.get(level, level),
         )
 
     async def async_write_parameter(
@@ -138,9 +154,9 @@ class VascoApiClient:
         url = bridge["appServerURL"].replace("ws://", "wss://")
         params = {"bridgeToken": bridge["bridgeToken"], "userToken": self._token}
 
-        # Round-trip the device object completely unmodified. The real app
-        # does not edit requestedLevel/controlMode/manualSettingActiveTill
-        # here -- forcing controlMode to "manual" (an earlier, wrong
+        # Round-trip the device object as received (apart from
+        # manualSettingActiveTill, set by async_set_level like the app
+        # does). Forcing controlMode to "manual" (an earlier, wrong
         # assumption) actively broke writes.
         account_properties_changed = json.dumps(
             {

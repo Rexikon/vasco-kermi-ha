@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections.abc import Callable
 from datetime import timedelta
 from typing import Any
@@ -13,7 +14,14 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import VascoApiClient, ventilation_devices
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    MANUAL_DURATION_MINUTES,
+    MANUAL_DURATION_PERMANENT,
+    MANUAL_DURATION_UNTIL_SCHEDULE,
+    MANUAL_PERMANENT,
+    MANUAL_UNTIL_NEXT_SCHEDULE,
+)
 from .exceptions import VascoAuthError, VascoError, VascoNoDevicesError
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,6 +49,9 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=update_interval,
         )
         self.client = client
+        # Per-device choice of how long a level set from HA holds, kept by
+        # the "manual level duration" select (restored across restarts).
+        self.manual_duration: dict[str, str] = {}
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
@@ -60,10 +71,22 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def async_set_level(self, serial: str, level: int) -> None:
         """Write a new level and poll briefly to reflect it quickly."""
         device = self.device_by_serial(serial)
-        await self.client.async_set_level(self.data, device, level)
+        await self.client.async_set_level(
+            self.data, device, level, self._manual_till(serial)
+        )
         await self._async_confirm(
             serial, lambda d: d.get("level") == level, f"level {level}"
         )
+
+    def _manual_till(self, serial: str) -> int:
+        """manualSettingActiveTill for a level write, from the chosen duration."""
+        option = self.manual_duration.get(serial, MANUAL_DURATION_UNTIL_SCHEDULE)
+        if option == MANUAL_DURATION_PERMANENT:
+            return MANUAL_PERMANENT
+        minutes = MANUAL_DURATION_MINUTES.get(option)
+        if not minutes:
+            return MANUAL_UNTIL_NEXT_SCHEDULE
+        return int((time.time() + minutes * 60) * 1000)
 
     async def async_write_parameter(
         self,
