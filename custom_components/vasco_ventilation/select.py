@@ -50,6 +50,16 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
+def _next_change(device: dict[str, Any]) -> str | None:
+    """When next_scheduled_level takes over (timestampOfNextEvent, epoch ms):
+    the next schedule point, or the end of a timed manual level. The cloud
+    reports 1 when nothing is scheduled (a permanent manual level)."""
+    ts = device.get("timestampOfNextEvent")
+    if isinstance(ts, int) and ts > 10**12:
+        return datetime.fromtimestamp(ts / 1000, tz=UTC).isoformat()
+    return None
+
+
 def _manual_until(device: dict[str, Any]) -> str | None:
     """How long the current manual level holds: an ISO time, "permanent",
     or None when the schedule is in control (or the deadline has passed --
@@ -96,6 +106,7 @@ class VascoLevelSelect(VascoEntity, SelectEntity):
         return {
             "control_mode": device.get("controlMode"),
             "next_scheduled_level": LEVEL_NAMES.get(_WIRE_TO_LEVEL.get(device.get("nextValue"))),
+            "next_scheduled_change": _next_change(device),
             "manual_until": _manual_until(device),
         }
 
