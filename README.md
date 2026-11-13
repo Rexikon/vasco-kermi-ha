@@ -18,7 +18,7 @@ endorsed, or supported by Vasco.
   Holidays, or Guests, with its state (and history) tracked like any other
   entity — no on/off toggle, since the unit doesn't support one.
 - **Manual level duration** — like the app's prompt: until the next schedule
-  change (default), permanently, or for 1/2/4/8/24 hours.
+  change (default), permanently, or for 5/10/15/30 minutes or 1/2/4/8/24 hours.
 - **Timed functions** — Boost and Fireplace mode buttons, the same as the
   official app's "Regulator" and "Kominek". Boost runs for the time stored
   in the unit (30 min by default); Fireplace mode for the time last picked
@@ -95,7 +95,7 @@ very welcome.
 | Platform | Entity | Notes |
 |---|---|---|
 | `select` | Ventilation level | Options: Low / Medium / High / Holidays / Guests (Boost shown read-only while running) |
-| `select` | Manual level duration | config: until next schedule change / permanently / 1–24 h; applies to the next level change |
+| `select` | Manual level duration | config: until next schedule change / permanently / 5 min–24 h; applies to the next level change |
 | `button` | Boost | timed High (the app's "Regulator"); select a level to stop it early |
 | `button` | Fireplace mode | timed overpressure (the app's "Kominek") |
 | `sensor` | Indoor / outdoor / supply / exhaust temperature | °C |

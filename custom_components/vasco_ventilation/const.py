@@ -84,6 +84,10 @@ MANUAL_DURATION_PERMANENT = "permanent"
 MANUAL_DURATION_MINUTES: dict[str, int | None] = {
     MANUAL_DURATION_UNTIL_SCHEDULE: None,
     MANUAL_DURATION_PERMANENT: None,
+    "5m": 5,
+    "10m": 10,
+    "15m": 15,
+    "30m": 30,
     "1h": 60,
     "2h": 120,
     "4h": 240,

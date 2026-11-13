@@ -59,6 +59,10 @@
         "state": {
           "until_schedule": "Until next schedule change",
           "permanent": "Permanently",
+          "5m": "5 minutes",
+          "10m": "10 minutes",
+          "15m": "15 minutes",
+          "30m": "30 minutes",
           "1h": "1 hour",
           "2h": "2 hours",
           "4h": "4 hours",
