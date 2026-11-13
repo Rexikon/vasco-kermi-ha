@@ -49,7 +49,31 @@
       "inlet_fan_speed": { "name": "Prędkość wentylatora nawiewu" },
       "exhaust_fan_speed": { "name": "Prędkość wentylatora wywiewu" },
       "bypass_position": { "name": "Pozycja bypassu" },
+      "preheater_demand": { "name": "Grzałka wstępna" },
+      "boost_end": { "name": "Koniec regulatora" },
       "filter_replace_interval": { "name": "Interwał wymiany filtra" }
+    },
+    "select": {
+      "manual_duration": {
+        "name": "Czas trwania biegu ręcznego",
+        "state": {
+          "until_schedule": "Do następnej zmiany harmonogramu",
+          "permanent": "Na stałe",
+          "5m": "5 minut",
+          "10m": "10 minut",
+          "15m": "15 minut",
+          "30m": "30 minut",
+          "1h": "1 godzina",
+          "2h": "2 godziny",
+          "4h": "4 godziny",
+          "8h": "8 godzin",
+          "24h": "24 godziny"
+        }
+      }
+    },
+    "button": {
+      "boost": { "name": "Regulator" },
+      "fireplace": { "name": "Tryb kominkowy" }
     },
     "binary_sensor": {
       "filter_dirty": {
