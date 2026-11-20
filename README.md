@@ -111,6 +111,18 @@ very welcome.
 | `binary_sensor` | Defrost active | diagnostic |
 | `binary_sensor` | Fireplace mode active | diagnostic |
 
+## Development
+
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements_test.txt
+ruff check . && ruff format --check .
+pytest
+```
+
+The tests use synthetic device data and a mocked cloud API; nothing talks
+to a real account or unit.
+
 ## Support
 
 Found this useful? You're welcome to sponsor continued work via the
