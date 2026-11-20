@@ -65,9 +65,9 @@ they were never confirmed to work correctly, rather than shipping a guess:
 
 - **No Auto mode.** The official app's "Automatic" sends a value that an
   X425 without a humidity/CO2 sensor ignores, so it isn't offered.
-- **Holidays, Guests, Boost and Fireplace mode were mapped on an X425**
-  (`VMD-17RPS01`). Other models may encode them differently; reports from
-  other units are welcome.
+- **Holidays, Guests, Boost and Fireplace mode were mapped on an X425 and
+  confirmed on an X500** (both `VMD-17RPS01`). Other models may encode them
+  differently; reports from other units are welcome.
 - **Fireplace mode can't be stopped early.** The unit ends it when its time
   is up; changing the level meanwhile works but doesn't end it.
 - **No "off" state.** A heat-recovery ventilation unit doesn't have a
