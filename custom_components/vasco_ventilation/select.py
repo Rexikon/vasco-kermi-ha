@@ -8,7 +8,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 from homeassistant.components.select import SelectEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
@@ -26,7 +25,7 @@ from .const import (
     SETTABLE_LEVELS,
     WIRE_LEVEL_OFFSET,
 )
-from .coordinator import VascoCoordinator
+from .coordinator import VascoConfigEntry, VascoCoordinator
 from .entity import VascoEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,10 +38,10 @@ _WIRE_TO_LEVEL = {wire: level for level, wire in WIRE_LEVEL_OFFSET.items()}
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: VascoConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up the level and manual-duration selects for every device."""
-    coordinator: VascoCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     entities: list[SelectEntity] = []
     for device in ventilation_devices(coordinator.data):
         entities.append(VascoLevelSelect(coordinator, device["serial"]))
@@ -96,10 +95,25 @@ class VascoLevelSelect(VascoEntity, SelectEntity):
     def __init__(self, coordinator: VascoCoordinator, serial: str) -> None:
         super().__init__(coordinator, serial)
         self._attr_unique_id = serial
+        self._warned_levels: set[Any] = set()
 
     @property
     def current_option(self) -> str | None:
-        return LEVEL_NAMES.get(self.device.get("level"))
+        level = self.device.get("level")
+        option = LEVEL_NAMES.get(level)
+        if option is None and level is not None and level not in self._warned_levels:
+            # Logged once per value: other models may use levels not mapped
+            # yet (e.g. 21 reported on a 225 Compact in issue #1).
+            self._warned_levels.add(level)
+            _LOGGER.warning(
+                "Vasco unit %s (%s) reports unknown ventilation level %r; please "
+                "report it at https://github.com/Rexikon/vasco-kermi-ha/issues "
+                "with a diagnostics download",
+                self._serial,
+                self.device.get("productTypeString"),
+                level,
+            )
+        return option
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -115,9 +129,12 @@ class VascoLevelSelect(VascoEntity, SelectEntity):
         level = NAME_TO_LEVEL.get(option)
         if level is None or level not in SETTABLE_LEVELS:
             raise ServiceValidationError(
-                f"'{option}' can't be selected here "
-                f"(supported: {', '.join(_SETTABLE_LEVEL_NAMES)}). "
-                "Use the Boost button to start a timed boost."
+                translation_domain=DOMAIN,
+                translation_key="level_not_settable",
+                translation_placeholders={
+                    "option": option,
+                    "supported": ", ".join(_SETTABLE_LEVEL_NAMES),
+                },
             )
         await self.coordinator.async_set_level(self._serial, level)
 
@@ -147,9 +164,7 @@ class VascoManualDurationSelect(VascoEntity, SelectEntity, RestoreEntity):
 
     @property
     def current_option(self) -> str:
-        return self.coordinator.manual_duration.get(
-            self._serial, MANUAL_DURATION_UNTIL_SCHEDULE
-        )
+        return self.coordinator.manual_duration.get(self._serial, MANUAL_DURATION_UNTIL_SCHEDULE)
 
     async def async_select_option(self, option: str) -> None:
         self.coordinator.manual_duration[self._serial] = option

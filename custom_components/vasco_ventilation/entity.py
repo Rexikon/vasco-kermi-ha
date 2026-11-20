@@ -12,6 +12,10 @@ from .coordinator import VascoCoordinator
 from .exceptions import VascoNoDevicesError
 
 
+def _str_or_none(value: Any) -> str | None:
+    return None if value is None else str(value)
+
+
 class VascoEntity(CoordinatorEntity[VascoCoordinator]):
     """Base entity tied to a single ventilation device, by serial."""
 
@@ -26,9 +30,9 @@ class VascoEntity(CoordinatorEntity[VascoCoordinator]):
             name=device.get("name") or serial,
             manufacturer=MANUFACTURER,
             model=device.get("productTypeString"),
-            sw_version=(
-                str(device["swVersion"]) if device.get("swVersion") is not None else None
-            ),
+            sw_version=_str_or_none(device.get("swVersion")),
+            hw_version=_str_or_none(device.get("hwVersion")),
+            serial_number=serial,
         )
 
     @property

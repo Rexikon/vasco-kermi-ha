@@ -10,14 +10,12 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import ventilation_devices
-from .const import DOMAIN
-from .coordinator import VascoCoordinator
+from .coordinator import VascoConfigEntry, VascoCoordinator
 from .entity import VascoEntity
 
 
@@ -63,10 +61,10 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[VascoBinarySensorDescription, ...] = (
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: VascoConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up binary sensors for every ventilation device on the account."""
-    coordinator: VascoCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     async_add_entities(
         VascoBinarySensor(coordinator, device["serial"], description)
         for device in ventilation_devices(coordinator.data)

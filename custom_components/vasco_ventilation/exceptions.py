@@ -20,5 +20,10 @@ class VascoApiError(VascoError):
     that isn't a connection or auth problem."""
 
 
+class VascoBridgeRejectedError(VascoConnectionError):
+    """Raised when the bridge WebSocket refuses the connection (e.g. an
+    expired userToken)."""
+
+
 class VascoNoDevicesError(VascoError):
     """Raised when the account has no ventilation device."""

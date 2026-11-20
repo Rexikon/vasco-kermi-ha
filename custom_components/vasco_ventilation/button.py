@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -22,12 +21,11 @@ from .api import ventilation_devices
 from .const import (
     DEFAULT_BOOST_MINUTES,
     DEFAULT_FIREPLACE_MINUTES,
-    DOMAIN,
     LEVEL_BOOST,
     PARAM_BOOST_MINUTES,
     PARAM_FIREPLACE_MINUTES,
 )
-from .coordinator import VascoCoordinator
+from .coordinator import VascoConfigEntry, VascoCoordinator
 from .entity import VascoEntity
 
 
@@ -66,10 +64,10 @@ BUTTON_DESCRIPTIONS: tuple[VascoButtonDescription, ...] = (
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: VascoConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up the timed-function buttons for every ventilation device."""
-    coordinator: VascoCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     async_add_entities(
         VascoButton(coordinator, device["serial"], description)
         for device in ventilation_devices(coordinator.data)
@@ -98,7 +96,11 @@ class VascoButton(VascoEntity, ButtonEntity):
 
     def _minutes(self) -> int:
         value = self.device.get(self.entity_description.parameter)
-        return value if isinstance(value, int) and value > 0 else self.entity_description.default_minutes
+        return (
+            value
+            if isinstance(value, int) and value > 0
+            else self.entity_description.default_minutes
+        )
 
     async def async_press(self) -> None:
         description = self.entity_description

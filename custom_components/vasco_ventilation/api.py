@@ -37,6 +37,7 @@ from .const import (
 from .exceptions import (
     VascoApiError,
     VascoAuthError,
+    VascoBridgeRejectedError,
     VascoConnectionError,
 )
 
@@ -64,9 +65,7 @@ def find_bridge(config: dict[str, Any], device: dict[str, Any]) -> dict[str, Any
     bridges = config.get("bridges", [])
     if len(bridges) == 1:
         return bridges[0]
-    raise VascoConnectionError(
-        f"could not find the bridge for device {device.get('serial')!r}"
-    )
+    raise VascoConnectionError(f"could not find the bridge for device {device.get('serial')!r}")
 
 
 class VascoApiClient:
@@ -85,14 +84,15 @@ class VascoApiClient:
     async def async_login(self) -> str:
         """Log in and cache the userToken. Raises VascoAuthError on bad
         credentials, VascoConnectionError on network failure."""
-        try:
-            payload = await self._api_post(
-                "login",
-                {"userInfo": {"email": self._email, "password": self._password}},
-                authed=False,
-            )
-        except VascoApiError as err:
-            raise VascoAuthError(str(err)) from err
+        # Bad credentials come back as errorCode "FAILED" with extraInfo
+        # "LOGIN_FAILED"; _api_post classifies that as VascoAuthError. Any
+        # other failure (server error, rate limit) stays a VascoApiError so
+        # a vendor outage doesn't ask the user to re-enter a valid password.
+        payload = await self._api_post(
+            "login",
+            {"userInfo": {"email": self._email, "password": self._password}},
+            authed=False,
+        )
         if not isinstance(payload, dict) or not payload.get("userToken"):
             raise VascoAuthError("login succeeded but no userToken was returned")
         self._token = payload["userToken"]
@@ -149,7 +149,19 @@ class VascoApiClient:
         """
         if self._token is None:
             await self.async_login()
+        try:
+            await self._ws_write(config, device, parameter, value)
+        except VascoBridgeRejectedError:
+            # Most likely an expired userToken: REST only refreshes it when
+            # a poll fails, so a write can get there first. Retry once.
+            _LOGGER.debug("bridge rejected the connection; logging in again")
+            self._token = None
+            await self.async_login()
+            await self._ws_write(config, device, parameter, value)
 
+    async def _ws_write(
+        self, config: dict[str, Any], device: dict[str, Any], parameter: str, value: int
+    ) -> None:
         bridge = find_bridge(config, device)
         url = bridge["appServerURL"].replace("ws://", "wss://")
         params = {"bridgeToken": bridge["bridgeToken"], "userToken": self._token}
@@ -180,16 +192,23 @@ class VascoApiClient:
         try:
             async with asyncio.timeout(_WS_TIMEOUT):
                 async with self._session.ws_connect(url, params=params) as ws:
+                    ready = False
                     async for msg in ws:
                         frame = _decode_ws_json(msg)
                         if frame is None:
                             continue
                         if frame.get("functionName") == "connectionStatus":
                             if frame.get("status") != "OK":
-                                raise VascoConnectionError(
-                                    f"bridge rejected the WebSocket connection: {frame}"
+                                raise VascoBridgeRejectedError(
+                                    "bridge rejected the WebSocket connection: "
+                                    f"{frame.get('status')}"
                                 )
+                            ready = True
                             break
+                    if not ready:
+                        raise VascoConnectionError(
+                            "bridge closed the WebSocket before it was ready"
+                        )
 
                     await ws.send_bytes(account_properties_changed.encode())
                     await ws.send_bytes(write_data.encode())
@@ -207,10 +226,10 @@ class VascoApiClient:
             # Not fatal -- the bridge sometimes doesn't send a timely ack
             # even on a real, successful app write. The caller re-polls
             # REST afterwards to find out what actually happened.
-            _LOGGER.debug(
-                "no dataWritten ack within %ss for %s=%s", _WS_TIMEOUT, parameter, value
-            )
-        except aiohttp.ClientError as err:
+            _LOGGER.debug("no dataWritten ack within %ss for %s=%s", _WS_TIMEOUT, parameter, value)
+        except (aiohttp.ClientError, OSError) as err:
+            # OSError covers ConnectionResetError from sending on a socket
+            # the bridge has already closed.
             raise VascoConnectionError(f"WebSocket write failed: {err}") from err
 
     async def _api_post(
@@ -246,12 +265,16 @@ class VascoApiClient:
 
         if not isinstance(data, dict) or data.get("status") != "success":
             payload = data.get("payload") if isinstance(data, dict) else None
+            if not isinstance(payload, dict):
+                payload = {}
             error_code = str(
-                (payload.get("errorCode") if isinstance(payload, dict) else None)
+                payload.get("errorCode")
                 or (data.get("status") if isinstance(data, dict) else None)
                 or "unknown"
             )
-            is_auth_error = any(kw in error_code.upper() for kw in ("LOGIN", "TOKEN", "AUTH"))
+            if payload.get("extraInfo"):
+                error_code = f"{error_code}/{payload['extraInfo']}"
+            is_auth_error = _is_auth_error(error_code)
             if authed and is_auth_error and not _retried:
                 _LOGGER.debug("re-authenticating after %s from %s", error_code, function_name)
                 self._token = None
@@ -263,6 +286,18 @@ class VascoApiClient:
             raise VascoApiError(f"{function_name} failed: {error_code}")
 
         return data.get("payload")
+
+
+def _is_auth_error(error_code: str) -> bool:
+    """Whether an API error code means the credentials or token were rejected.
+
+    Bad credentials: errorCode "FAILED", extraInfo "LOGIN_FAILED". A rate
+    limit ("too many login attempts") is transient, not an auth failure.
+    """
+    code = error_code.upper()
+    if "TOO_MANY" in code:
+        return False
+    return any(kw in code for kw in ("LOGIN", "TOKEN", "AUTH", "NOT_VERIFIED"))
 
 
 def _decode_ws_json(msg: aiohttp.WSMessage) -> dict[str, Any] | None:

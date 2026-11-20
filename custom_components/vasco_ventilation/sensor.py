@@ -14,10 +14,9 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    EntityCategory,
     PERCENTAGE,
+    EntityCategory,
     UnitOfTemperature,
     UnitOfTime,
     UnitOfVolumeFlowRate,
@@ -26,8 +25,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import ventilation_devices
-from .const import DOMAIN, LEVEL_BOOST
-from .coordinator import VascoCoordinator
+from .const import LEVEL_BOOST
+from .coordinator import VascoConfigEntry, VascoCoordinator
 from .entity import VascoEntity
 
 
@@ -153,9 +152,10 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
     VascoSensorDescription(
         key="airflow",
         translation_key="airflow",
+        device_class=SensorDeviceClass.VOLUME_FLOW_RATE,
         native_unit_of_measurement=UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR,
         state_class=SensorStateClass.MEASUREMENT,
-        icon="mdi:air-filter",
+        icon="mdi:fan",
         value_fn=_mean_flow,
     ),
     VascoSensorDescription(
@@ -234,10 +234,10 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: VascoConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up sensors for every ventilation device on the account."""
-    coordinator: VascoCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     async_add_entities(
         VascoSensor(coordinator, device["serial"], description)
         for device in ventilation_devices(coordinator.data)

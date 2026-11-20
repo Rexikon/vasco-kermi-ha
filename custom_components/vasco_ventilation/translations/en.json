@@ -168,5 +168,16 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "write_failed": {
+      "message": "Could not send the command to the Vasco unit: {error}"
+    },
+    "auth_failed": {
+      "message": "The Vasco account rejected the login. Re-enter your password in the integration settings."
+    },
+    "level_not_settable": {
+      "message": "'{option}' can't be selected here (supported: {supported}). Use the Boost button to start a timed boost."
+    }
   }
 }

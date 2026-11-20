@@ -168,5 +168,16 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "write_failed": {
+      "message": "Nie udało się wysłać polecenia do rekuperatora Vasco: {error}"
+    },
+    "auth_failed": {
+      "message": "Konto Vasco odrzuciło logowanie. Podaj ponownie hasło w ustawieniach integracji."
+    },
+    "level_not_settable": {
+      "message": "Nie można tu wybrać „{option}” (dostępne: {supported}). Przewietrzanie uruchamia się osobnym przyciskiem."
+    }
   }
 }

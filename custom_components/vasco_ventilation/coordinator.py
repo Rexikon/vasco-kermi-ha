@@ -5,12 +5,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import VascoApiClient, ventilation_devices
@@ -26,6 +27,8 @@ from .exceptions import VascoAuthError, VascoError, VascoNoDevicesError
 
 _LOGGER = logging.getLogger(__name__)
 
+type VascoConfigEntry = ConfigEntry[VascoCoordinator]
+
 # How long / how often to poll after a write, to reflect the change in the
 # UI close to as fast as the official app does (~10s for a real success),
 # without hammering the API. Independent of the regular scan_interval.
@@ -36,15 +39,19 @@ _CONFIRM_POLL_DELAY = 3
 class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Polls getaccountconfiguration and mediates writes to the unit."""
 
+    config_entry: VascoConfigEntry
+
     def __init__(
         self,
         hass: HomeAssistant,
+        config_entry: VascoConfigEntry,
         client: VascoApiClient,
         update_interval: timedelta,
     ) -> None:
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=config_entry,
             name=DOMAIN,
             update_interval=update_interval,
         )
@@ -71,12 +78,10 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def async_set_level(self, serial: str, level: int) -> None:
         """Write a new level and poll briefly to reflect it quickly."""
         device = self.device_by_serial(serial)
-        await self.client.async_set_level(
-            self.data, device, level, self._manual_till(serial)
+        await self._async_write(
+            self.client.async_set_level(self.data, device, level, self._manual_till(serial))
         )
-        await self._async_confirm(
-            serial, lambda d: d.get("level") == level, f"level {level}"
-        )
+        await self._async_confirm(serial, lambda d: d.get("level") == level, f"level {level}")
 
     def _manual_till(self, serial: str) -> int:
         """manualSettingActiveTill for a level write, from the chosen duration."""
@@ -98,8 +103,31 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Write a raw parameter (e.g. a timed function's minutes) and poll
         briefly until `confirmed(device)` holds."""
         device = self.device_by_serial(serial)
-        await self.client.async_write_parameter(self.data, device, parameter, value)
+        await self._async_write(
+            self.client.async_write_parameter(self.data, device, parameter, value)
+        )
         await self._async_confirm(serial, confirmed, f"{parameter}={value}")
+
+    async def _async_write(self, write: Awaitable[None]) -> None:
+        """Run a write, turning API errors into a readable HA error.
+
+        Without this a network or auth problem surfaces as an unexpected
+        exception with a stack trace instead of a message in the UI.
+        """
+        try:
+            await write
+        except VascoAuthError as err:
+            self.config_entry.async_start_reauth(self.hass)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="auth_failed",
+            ) from err
+        except VascoError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="write_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
 
     async def _async_confirm(
         self,
@@ -120,7 +148,9 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             try:
                 config = await self.client.async_get_account_configuration()
             except VascoError as err:
-                _LOGGER.debug("poll %s/%s after %s failed: %s", attempt + 1, _CONFIRM_POLL_ATTEMPTS, what, err)
+                _LOGGER.debug(
+                    "poll %s/%s after %s failed: %s", attempt + 1, _CONFIRM_POLL_ATTEMPTS, what, err
+                )
                 continue
             self.async_set_updated_data(config)
             try:
