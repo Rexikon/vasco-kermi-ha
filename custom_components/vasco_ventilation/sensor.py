@@ -59,7 +59,11 @@ def _flow(
     inputs for the computation are missing.
     """
     speed = _first(device, *speed_keys)
-    maximum = _first(device, max_key, "absoluteMaximumFlow", "qMax")
+    # Skip zero/missing maxima so an unset qHigh* falls through to the next one.
+    maximum = next(
+        (device[k] for k in (max_key, "absoluteMaximumFlow", "qMax") if device.get(k)),
+        None,
+    )
     if speed is not None and maximum:
         return round(speed * maximum / 100, 1)
     return device.get(flow_key)
