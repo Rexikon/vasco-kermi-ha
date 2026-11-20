@@ -20,11 +20,11 @@ endorsed, or supported by Vasco.
 - **Manual level duration** — like the app's prompt: until the next schedule
   change (default), permanently, or for 5/10/15/30 minutes or 1/2/4/8/24 hours.
 - **Timed functions** — Boost and Fireplace mode buttons, the same as the
-  official app's "Regulator" and "Kominek". Boost runs for the time stored
+  official app's boost and fireplace functions. Boost runs for the time stored
   in the unit (30 min by default); Fireplace mode for the time last picked
   in the app.
-- **Sensors** — indoor/outdoor/supply/exhaust temperature, inlet/exhaust
-  airflow (m³/h), inlet/exhaust fan speed (%), bypass position (%), preheater
+- **Sensors** — indoor/outdoor/supply/exhaust temperature, airflow as shown
+  in the official app (mean of supply and exhaust), inlet/exhaust airflow (m³/h), inlet/exhaust fan speed (%), bypass position (%), preheater
   demand (%), boost end time, filter replace interval.
 - **Binary sensors** — filter dirty, fault, defrost active, fireplace mode
   active.
@@ -94,21 +94,22 @@ very welcome.
 
 | Platform | Entity | Notes |
 |---|---|---|
-| `select` | Ventilation level | Options: Low / Medium / High / Holidays / Guests (Boost shown read-only while running) |
+| `select` | Ventilation level | Options: Low / Medium / High / Holidays / Guests (Boost shown read-only while running). Option keys are lowercase (`low`, `medium`, …) |
 | `select` | Manual level duration | config: until next schedule change / permanently / 5 min–24 h; applies to the next level change |
-| `button` | Boost | timed High (the app's "Regulator"); select a level to stop it early |
-| `button` | Fireplace mode | timed overpressure (the app's "Kominek") |
+| `button` | Boost | timed High (the app's boost); select a level to stop it early |
+| `button` | Fireplace mode | timed overpressure (the app's fireplace function) |
 | `sensor` | Indoor / outdoor / supply / exhaust temperature | °C |
+| `sensor` | Airflow | m³/h, mean of supply and exhaust, as shown in the official app |
 | `sensor` | Inlet / exhaust airflow | m³/h |
 | `sensor` | Inlet / exhaust fan speed | % (diagnostic) |
 | `sensor` | Bypass position | % (diagnostic) |
 | `sensor` | Preheater demand | % (diagnostic), unknown when no preheater is fitted |
 | `sensor` | Boost ends | timestamp, only while Boost runs |
 | `sensor` | Filter replace interval | days (diagnostic) |
-| `binary_sensor` | Filter dirty | Brak / Tak |
-| `binary_sensor` | Fault | Brak / Tak |
+| `binary_sensor` | Filter dirty | No / Yes |
+| `binary_sensor` | Fault | None / Yes |
 | `binary_sensor` | Defrost active | diagnostic |
-| `binary_sensor` | Fireplace boost active | diagnostic |
+| `binary_sensor` | Fireplace mode active | diagnostic |
 
 ## Support
 

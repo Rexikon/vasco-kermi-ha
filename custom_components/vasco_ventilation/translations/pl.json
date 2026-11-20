@@ -3,15 +3,15 @@
     "step": {
       "user": {
         "title": "Połącz konto Vasco",
-        "description": "Podaj ten sam e-mail i hasło, którego używasz w oficjalnej aplikacji Vasco.",
+        "description": "Podaj ten sam e-mail i hasło, których używasz w oficjalnej aplikacji Vasco.",
         "data": {
           "email": "E-mail",
           "password": "Hasło"
         }
       },
       "reauth_confirm": {
-        "title": "Ponowna autoryzacja Vasco",
-        "description": "Hasło dla {email} przestało być akceptowane. Podaj aktualne hasło.",
+        "title": "Ponowne logowanie do Vasco",
+        "description": "Hasło do konta {email} nie jest już akceptowane. Podaj aktualne hasło.",
         "data": {
           "password": "Hasło"
         }
@@ -20,12 +20,12 @@
     "error": {
       "invalid_auth": "Nieprawidłowy e-mail lub hasło.",
       "cannot_connect": "Nie udało się połączyć z vasco.iqloud.eu. Sprawdź połączenie z internetem i spróbuj ponownie.",
-      "no_devices_found": "To konto nie ma żadnego urządzenia wentylacyjnego.",
-      "unknown": "Nieoczekiwany błąd."
+      "no_devices_found": "Na tym koncie nie ma żadnego urządzenia wentylacyjnego.",
+      "unknown": "Wystąpił nieoczekiwany błąd."
     },
     "abort": {
       "already_configured": "To konto Vasco jest już skonfigurowane.",
-      "reauth_successful": "Ponowna autoryzacja zakończona sukcesem."
+      "reauth_successful": "Ponowne logowanie zakończyło się pomyślnie."
     }
   },
   "options": {
@@ -33,27 +33,86 @@
       "init": {
         "title": "Opcje Vasco/Kermi Ventilation",
         "data": {
-          "scan_interval_seconds": "Częstotliwość odpytywania (sekundy)"
+          "scan_interval_seconds": "Interwał odpytywania (sekundy)"
         }
       }
     }
   },
   "entity": {
     "sensor": {
-      "indoor_temperature": { "name": "Temperatura wewnętrzna" },
-      "outdoor_temperature": { "name": "Temperatura zewnętrzna" },
-      "supply_temperature": { "name": "Temperatura nawiewu" },
-      "exhaust_temperature": { "name": "Temperatura wywiewu" },
-      "inlet_flow": { "name": "Przepływ nawiewu" },
-      "exhaust_flow": { "name": "Przepływ wywiewu" },
-      "inlet_fan_speed": { "name": "Prędkość wentylatora nawiewu" },
-      "exhaust_fan_speed": { "name": "Prędkość wentylatora wywiewu" },
-      "bypass_position": { "name": "Pozycja bypassu" },
-      "preheater_demand": { "name": "Grzałka wstępna" },
-      "boost_end": { "name": "Koniec regulatora" },
-      "filter_replace_interval": { "name": "Interwał wymiany filtra" }
+      "indoor_temperature": {
+        "name": "Temperatura wewnętrzna"
+      },
+      "outdoor_temperature": {
+        "name": "Temperatura zewnętrzna"
+      },
+      "supply_temperature": {
+        "name": "Temperatura nawiewu"
+      },
+      "exhaust_temperature": {
+        "name": "Temperatura wywiewu"
+      },
+      "airflow": {
+        "name": "Przepływ powietrza"
+      },
+      "inlet_flow": {
+        "name": "Przepływ nawiewu"
+      },
+      "exhaust_flow": {
+        "name": "Przepływ wywiewu"
+      },
+      "inlet_fan_speed": {
+        "name": "Prędkość wentylatora nawiewu"
+      },
+      "exhaust_fan_speed": {
+        "name": "Prędkość wentylatora wywiewu"
+      },
+      "bypass_position": {
+        "name": "Pozycja bypassu"
+      },
+      "preheater_demand": {
+        "name": "Moc nagrzewnicy wstępnej"
+      },
+      "boost_end": {
+        "name": "Koniec przewietrzania"
+      },
+      "filter_replace_interval": {
+        "name": "Okres wymiany filtra"
+      }
     },
     "select": {
+      "level": {
+        "state": {
+          "low": "Niski",
+          "medium": "Średni",
+          "high": "Wysoki",
+          "holidays": "Wakacje",
+          "guests": "Goście",
+          "boost": "Przewietrzanie"
+        },
+        "state_attributes": {
+          "next_scheduled_level": {
+            "name": "Następny bieg wg harmonogramu",
+            "state": {
+              "low": "Niski",
+              "medium": "Średni",
+              "high": "Wysoki",
+              "holidays": "Wakacje",
+              "guests": "Goście",
+              "boost": "Przewietrzanie"
+            }
+          },
+          "next_scheduled_change": {
+            "name": "Następna zmiana harmonogramu"
+          },
+          "manual_until": {
+            "name": "Bieg ręczny do"
+          },
+          "control_mode": {
+            "name": "Tryb sterowania"
+          }
+        }
+      },
       "manual_duration": {
         "name": "Czas trwania biegu ręcznego",
         "state": {
@@ -72,14 +131,18 @@
       }
     },
     "button": {
-      "boost": { "name": "Regulator" },
-      "fireplace": { "name": "Tryb kominkowy" }
+      "boost": {
+        "name": "Przewietrzanie"
+      },
+      "fireplace": {
+        "name": "Tryb kominkowy"
+      }
     },
     "binary_sensor": {
       "filter_dirty": {
         "name": "Filtr zabrudzony",
         "state": {
-          "off": "Brak",
+          "off": "Nie",
           "on": "Tak"
         }
       },

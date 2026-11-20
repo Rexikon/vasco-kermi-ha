@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -46,12 +47,13 @@ def _flow(
     speed_keys: tuple[str, ...],
     max_key: str,
     flow_key: str,
+    digits: int | None = 1,
 ) -> Any:
     """Airflow in m3/h the way the official app shows it.
 
     The app computes fan speed (%) x the flow configured for 100 % / 100.
     That maximum is qHighSupply / qHighExhaust on X-series units (shown in
-    the app as "Nawiew/Wyciag do pomieszczen", e.g. 400 / 405 m3/h on an
+    the app's settings as supply/extract flow to rooms, e.g. 400 / 405 m3/h on an
     X425) and absoluteMaximumFlow on others (225 Compact), with qMax (the
     model's rated maximum) as a last resort. The raw actual*Flow field is
     not m3/h on most models (X425 reports 8.88 / 22.22 at 26 / 27 %, D275
@@ -65,8 +67,24 @@ def _flow(
         None,
     )
     if speed is not None and maximum:
-        return round(speed * maximum / 100, 1)
+        flow = speed * maximum / 100
+        return flow if digits is None else round(flow, digits)
     return device.get(flow_key)
+
+
+def _mean_flow(device: dict[str, Any]) -> float | None:
+    """The single airflow figure the official app shows.
+
+    It is the mean of supply and exhaust airflow, truncated (not rounded)
+    to one decimal: e.g. an X500 at 70 % with 7 / 500 m3/h configured for
+    100 % shows (4.9 + 350.0) / 2 = 177.45 -> 177.4.
+    """
+    inlet = _flow(device, _INLET_SPEED_KEYS, "qHighSupply", "actualInletFlow", None)
+    exhaust = _flow(device, _EXHAUST_SPEED_KEYS, "qHighExhaust", "actualExhaustFlow", None)
+    if inlet is None or exhaust is None:
+        return None
+    # round() first so float noise (177.44999...) doesn't truncate one step low.
+    return math.floor(round((inlet + exhaust) / 2 * 10, 6)) / 10
 
 
 # Airios controllers report 0xEF (239) for a value whose hardware is absent
@@ -131,6 +149,14 @@ SENSOR_DESCRIPTIONS: tuple[VascoSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: d.get("exhaustTemperature"),
+    ),
+    VascoSensorDescription(
+        key="airflow",
+        translation_key="airflow",
+        native_unit_of_measurement=UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:air-filter",
+        value_fn=_mean_flow,
     ),
     VascoSensorDescription(
         key="inlet_flow",

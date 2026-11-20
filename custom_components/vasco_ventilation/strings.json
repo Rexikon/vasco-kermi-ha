@@ -40,20 +40,79 @@
   },
   "entity": {
     "sensor": {
-      "indoor_temperature": { "name": "Indoor temperature" },
-      "outdoor_temperature": { "name": "Outdoor temperature" },
-      "supply_temperature": { "name": "Supply temperature" },
-      "exhaust_temperature": { "name": "Exhaust temperature" },
-      "inlet_flow": { "name": "Inlet airflow" },
-      "exhaust_flow": { "name": "Exhaust airflow" },
-      "inlet_fan_speed": { "name": "Inlet fan speed" },
-      "exhaust_fan_speed": { "name": "Exhaust fan speed" },
-      "bypass_position": { "name": "Bypass position" },
-      "preheater_demand": { "name": "Preheater demand" },
-      "boost_end": { "name": "Boost ends" },
-      "filter_replace_interval": { "name": "Filter replace interval" }
+      "indoor_temperature": {
+        "name": "Indoor temperature"
+      },
+      "outdoor_temperature": {
+        "name": "Outdoor temperature"
+      },
+      "supply_temperature": {
+        "name": "Supply temperature"
+      },
+      "exhaust_temperature": {
+        "name": "Exhaust temperature"
+      },
+      "airflow": {
+        "name": "Airflow"
+      },
+      "inlet_flow": {
+        "name": "Inlet airflow"
+      },
+      "exhaust_flow": {
+        "name": "Exhaust airflow"
+      },
+      "inlet_fan_speed": {
+        "name": "Inlet fan speed"
+      },
+      "exhaust_fan_speed": {
+        "name": "Exhaust fan speed"
+      },
+      "bypass_position": {
+        "name": "Bypass position"
+      },
+      "preheater_demand": {
+        "name": "Preheater demand"
+      },
+      "boost_end": {
+        "name": "Boost ends"
+      },
+      "filter_replace_interval": {
+        "name": "Filter replace interval"
+      }
     },
     "select": {
+      "level": {
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High",
+          "holidays": "Holidays",
+          "guests": "Guests",
+          "boost": "Boost"
+        },
+        "state_attributes": {
+          "next_scheduled_level": {
+            "name": "Next scheduled level",
+            "state": {
+              "low": "Low",
+              "medium": "Medium",
+              "high": "High",
+              "holidays": "Holidays",
+              "guests": "Guests",
+              "boost": "Boost"
+            }
+          },
+          "next_scheduled_change": {
+            "name": "Next scheduled change"
+          },
+          "manual_until": {
+            "name": "Manual level until"
+          },
+          "control_mode": {
+            "name": "Control mode"
+          }
+        }
+      },
       "manual_duration": {
         "name": "Manual level duration",
         "state": {
@@ -72,14 +131,18 @@
       }
     },
     "button": {
-      "boost": { "name": "Boost" },
-      "fireplace": { "name": "Fireplace mode" }
+      "boost": {
+        "name": "Boost"
+      },
+      "fireplace": {
+        "name": "Fireplace mode"
+      }
     },
     "binary_sensor": {
       "filter_dirty": {
         "name": "Filter dirty",
         "state": {
-          "off": "None",
+          "off": "No",
           "on": "Yes"
         }
       },
@@ -98,7 +161,7 @@
         }
       },
       "fireplace_boost_active": {
-        "name": "Fireplace boost active",
+        "name": "Fireplace mode active",
         "state": {
           "off": "No",
           "on": "Yes"

@@ -30,7 +30,7 @@ class VascoBinarySensorDescription(BinarySensorEntityDescription):
 
 BINARY_SENSOR_DESCRIPTIONS: tuple[VascoBinarySensorDescription, ...] = (
     # No PROBLEM device_class: that forces HA's "OK"/"Problem" labels.
-    # Custom off/on translations render as Brak/Tak (None/Yes) instead.
+    # Custom off/on translations (e.g. No/Yes) are used instead.
     VascoBinarySensorDescription(
         key="filter_dirty",
         translation_key="filter_dirty",

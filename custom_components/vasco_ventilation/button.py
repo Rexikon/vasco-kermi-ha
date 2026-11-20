@@ -41,7 +41,7 @@ class VascoButtonDescription(ButtonEntityDescription):
 
 
 BUTTON_DESCRIPTIONS: tuple[VascoButtonDescription, ...] = (
-    # The app's "Regulator": High at boost speed (94-95 % on an X425) for
+    # The app's timed boost: High at boost speed (94-95 % on an X425) for
     # overrideTimeSpeed3 minutes; the unit reports level 13 meanwhile.
     VascoButtonDescription(
         key="boost",

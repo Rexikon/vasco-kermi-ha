@@ -84,12 +84,13 @@ class VascoLevelSelect(VascoEntity, SelectEntity):
     instead of behind the more-info dialog.
 
     All known levels are listed as options so the current one is always a
-    valid state. Boost (the app's timed "Regulator") is shown but not
+    valid state. Boost (the app's timed boost) is shown but not
     selectable here: it is started with its own button and ends itself, or
     when another level is selected. See SETTABLE_LEVELS in const.py.
     """
 
     _attr_name = None
+    _attr_translation_key = "level"
     _attr_options = list(LEVEL_NAMES.values())
 
     def __init__(self, coordinator: VascoCoordinator, serial: str) -> None:

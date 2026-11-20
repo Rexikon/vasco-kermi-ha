@@ -24,14 +24,14 @@ CONF_SCAN_INTERVAL_SECONDS = "scan_interval_seconds"
 # app shows (2026-11-13):
 #
 #   wire 2 / 3 / 4 -> level 1 / 2 / 3   Low / Medium / High
-#   wire 6         -> level 4           Holidays ("Wakacje", speedRatio*6)
-#   wire 7         -> level 5           Guests ("Goscie", speedRatio*7)
+#   wire 6         -> level 4           Holidays (speedRatio*6)
+#   wire 7         -> level 5           Guests (speedRatio*7)
 #   wire 1, 5, 8   -> acknowledged by the bridge, ignored by the unit
 #
 # Wire 5 is what the official app sends for "Automatic"; the X425 without a
 # humidity/CO2 sensor ignores it, so Auto is not offered here.
 #
-# The app's timed boost ("Regulator") is not a requestedLevel write at all:
+# The app's timed boost is not a requestedLevel write at all:
 # it writes overrideTimeSpeed3 = minutes, and the unit reports level 13
 # (High, timed) until the timer runs out or another level is written.
 LEVEL_LOW = 1
@@ -41,13 +41,15 @@ LEVEL_HOLIDAYS = 4
 LEVEL_GUESTS = 5
 LEVEL_BOOST = 13
 
+# Select option keys; the displayed labels come from the translations
+# (entity.select.level.state).
 LEVEL_NAMES: dict[int, str] = {
-    LEVEL_LOW: "Low",
-    LEVEL_MEDIUM: "Medium",
-    LEVEL_HIGH: "High",
-    LEVEL_HOLIDAYS: "Holidays",
-    LEVEL_GUESTS: "Guests",
-    LEVEL_BOOST: "Boost",
+    LEVEL_LOW: "low",
+    LEVEL_MEDIUM: "medium",
+    LEVEL_HIGH: "high",
+    LEVEL_HOLIDAYS: "holidays",
+    LEVEL_GUESTS: "guests",
+    LEVEL_BOOST: "boost",
 }
 NAME_TO_LEVEL: dict[str, int] = {name: level for level, name in LEVEL_NAMES.items()}
 
