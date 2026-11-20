@@ -177,7 +177,7 @@
       "message": "The Vasco account rejected the login. Re-enter your password in the integration settings."
     },
     "level_not_settable": {
-      "message": "'{option}' can't be selected here (supported: {supported}). Use the Boost button to start a timed boost."
+      "message": "Option \"{option}\" can't be selected here (supported: {supported}). Use the Boost button to start a timed boost."
     }
   }
 }
