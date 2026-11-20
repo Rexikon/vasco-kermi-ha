@@ -50,10 +50,8 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[VascoBinarySensorDescription, ...] = (
         icon="mdi:snowflake-melt",
         is_on_fn=lambda d: bool(d.get("defrost")),
     ),
-    # Read-only: the write path for fireplace boost hasn't been verified
-    # against real device traffic, so this integration doesn't offer a
-    # switch for it (see README's Known limitations) -- but reading the
-    # official app's own state back is safe and useful.
+    # Set by the Fireplace mode button (or the official app); the unit
+    # clears it itself when the fireplace timer runs out.
     VascoBinarySensorDescription(
         key="fireplace_boost_active",
         translation_key="fireplace_boost_active",

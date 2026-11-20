@@ -29,6 +29,7 @@ import aiohttp
 
 from .const import (
     API_BASE,
+    MANUAL_UNTIL_NEXT_SCHEDULE,
     PRODUCT_CATEGORY_VENTILATION,
     USER_AGENT,
     WIRE_LEVEL_OFFSET,
@@ -113,27 +114,49 @@ class VascoApiClient:
         await self._api_post("setdeviceproperties", [device])
 
     async def async_set_level(
-        self, config: dict[str, Any], device: dict[str, Any], level: int
+        self,
+        config: dict[str, Any],
+        device: dict[str, Any],
+        level: int,
+        manual_till: int = MANUAL_UNTIL_NEXT_SCHEDULE,
     ) -> None:
         """Write a ventilation level to the unit over the bridge WebSocket.
 
+        manual_till is how long the level holds, the same choice the
+        official app offers: MANUAL_UNTIL_NEXT_SCHEDULE (0), MANUAL_PERMANENT
+        (-1), or an end time in epoch milliseconds. It must always be sent
+        explicitly: the field keeps its old value after a boost or a timed
+        level has ended, and echoing that back makes the new level end at
+        the old deadline.
+        """
+        await self.async_write_parameter(
+            config,
+            {**device, "manualSettingActiveTill": manual_till},
+            "requestedLevel",
+            WIRE_LEVEL_OFFSET.get(level, level),
+        )
+
+    async def async_write_parameter(
+        self, config: dict[str, Any], device: dict[str, Any], parameter: str, value: int
+    ) -> None:
+        """Write one raw parameter to the unit over the bridge WebSocket.
+
         This sends the ack-worthy command and returns once the bridge has
         acknowledged the write (or after a short timeout if it never does).
-        It intentionally does NOT poll/confirm the physical level changed --
+        It intentionally does NOT poll/confirm the physical state changed --
         that's the coordinator's job, since the only trustworthy source of
-        truth is a fresh REST read of `level`, never the WS ack alone.
+        truth is a fresh REST read, never the WS ack alone.
         """
         if self._token is None:
             await self.async_login()
 
         bridge = find_bridge(config, device)
-        wire_value = WIRE_LEVEL_OFFSET.get(level, level)
         url = bridge["appServerURL"].replace("ws://", "wss://")
         params = {"bridgeToken": bridge["bridgeToken"], "userToken": self._token}
 
-        # Round-trip the device object completely unmodified. The real app
-        # does not edit requestedLevel/controlMode/manualSettingActiveTill
-        # here -- forcing controlMode to "manual" (an earlier, wrong
+        # Round-trip the device object as received (apart from
+        # manualSettingActiveTill, set by async_set_level like the app
+        # does). Forcing controlMode to "manual" (an earlier, wrong
         # assumption) actively broke writes.
         account_properties_changed = json.dumps(
             {
@@ -146,8 +169,8 @@ class VascoApiClient:
         write_data = json.dumps(
             {
                 "functionName": "writeData",
-                "parameterName": "requestedLevel",
-                "data": wire_value,
+                "parameterName": parameter,
+                "data": value,
                 "modbusAddress": device["modbusAddress"],
                 "swVersion": device["swVersion"],
                 "productType": device["productType"],
@@ -177,14 +200,16 @@ class VascoApiClient:
                             continue
                         if (
                             frame.get("functionName") == "dataWritten"
-                            and frame.get("parameterName") == "requestedLevel"
+                            and frame.get("parameterName") == parameter
                         ):
                             return
         except TimeoutError:
             # Not fatal -- the bridge sometimes doesn't send a timely ack
             # even on a real, successful app write. The caller re-polls
             # REST afterwards to find out what actually happened.
-            _LOGGER.debug("no dataWritten ack within %ss for level=%s", _WS_TIMEOUT, level)
+            _LOGGER.debug(
+                "no dataWritten ack within %ss for %s=%s", _WS_TIMEOUT, parameter, value
+            )
         except aiohttp.ClientError as err:
             raise VascoConnectionError(f"WebSocket write failed: {err}") from err
 
