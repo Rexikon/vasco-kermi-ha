@@ -80,6 +80,17 @@ class _WS:
         self.sent.append(json.loads(data))
 
 
+class _StreamWS(_WS):
+    """A socket that yields one continuous stream of frames, then closes."""
+
+    def __init__(self, frames: list[dict]) -> None:
+        super().__init__([], [])
+        self._queue = list(frames)
+
+    def __aiter__(self) -> _StreamWS:
+        return self
+
+
 class _Session:
     def __init__(self, posts: list[Any], sockets: list[_WS] | None = None) -> None:
         self.posts = posts
@@ -89,7 +100,7 @@ class _Session:
     def post(self, url: str, **kwargs: Any) -> _Resp:
         return _Resp(self.posts.pop(0))
 
-    def ws_connect(self, url: str, params: dict) -> _WS:
+    def ws_connect(self, url: str, params: dict, **kwargs: Any) -> _WS:
         self.ws_params.append(params)
         return self.sockets.pop(0)
 
@@ -157,3 +168,31 @@ async def test_write_bridge_closes_before_ready() -> None:
     session = _Session([_login_ok()], [_WS([], [])])
     with pytest.raises(VascoConnectionError, match="before it was ready"):
         await VascoApiClient(session, "a@b.c", "x").async_set_level(ACCOUNT_CONFIG, DEVICE, 2)
+
+
+async def test_listen_passes_pushed_frames_until_closed() -> None:
+    changed = {
+        "functionName": "valueChanged",
+        "itemName": "deviceProperties",
+        "index": 0,
+        "parameterName": "level",
+        "value": 3,
+    }
+    ws = _StreamWS([{"functionName": "connectionStatus", "status": "OK"}, changed])
+    session = _Session([_login_ok()], [ws])
+    frames: list[dict] = []
+    connected: list[bool] = []
+    await VascoApiClient(session, "a@b.c", "x").async_listen(
+        ACCOUNT_CONFIG, DEVICE, frames.append, lambda: connected.append(True)
+    )
+    assert frames == [changed]
+    assert connected == [True]
+    assert ws.sent == []  # listening never writes
+
+
+async def test_listen_relogs_in_when_bridge_rejects_token() -> None:
+    rejected = _StreamWS([{"functionName": "connectionStatus", "status": "INVALID"}])
+    accepted = _StreamWS([{"functionName": "connectionStatus", "status": "OK"}])
+    session = _Session([_login_ok("old"), _login_ok("new")], [rejected, accepted])
+    await VascoApiClient(session, "a@b.c", "x").async_listen(ACCOUNT_CONFIG, DEVICE, print)
+    assert [p["userToken"] for p in session.ws_params] == ["old", "new"]

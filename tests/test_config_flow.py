@@ -11,7 +11,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.vasco_ventilation.const import CONF_SCAN_INTERVAL_SECONDS, DOMAIN
+from custom_components.vasco_ventilation.const import (
+    CONF_LIVE_UPDATES,
+    CONF_SCAN_INTERVAL_SECONDS,
+    DOMAIN,
+)
 from custom_components.vasco_ventilation.exceptions import (
     VascoApiError,
     VascoAuthError,
@@ -96,7 +100,7 @@ async def test_options_flow(hass: HomeAssistant, config_entry: MockConfigEntry) 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] is FlowResultType.FORM
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {CONF_SCAN_INTERVAL_SECONDS: 120}
+        result["flow_id"], {CONF_SCAN_INTERVAL_SECONDS: 120, CONF_LIVE_UPDATES: False}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert config_entry.options == {CONF_SCAN_INTERVAL_SECONDS: 120}
+    assert config_entry.options == {CONF_SCAN_INTERVAL_SECONDS: 120, CONF_LIVE_UPDATES: False}

@@ -10,11 +10,11 @@ from datetime import timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import VascoApiClient, ventilation_devices
+from .api import VascoApiClient, find_bridge, ventilation_devices
 from .const import (
     DOMAIN,
     MANUAL_DURATION_MINUTES,
@@ -34,6 +34,43 @@ type VascoConfigEntry = ConfigEntry[VascoCoordinator]
 # without hammering the API. Independent of the regular scan_interval.
 _CONFIRM_POLL_ATTEMPTS = 6
 _CONFIRM_POLL_DELAY = 3
+
+# Reconnect backoff for the live-updates connection, in seconds. A
+# connection that stayed up for _LIVE_STABLE resets it to the minimum.
+_LIVE_BACKOFF_MIN = 5
+_LIVE_BACKOFF_MAX = 300
+_LIVE_STABLE = 60
+
+
+def apply_value_changed(data: dict[str, Any], frame: dict[str, Any]) -> dict[str, Any] | None:
+    """Apply a bridge `valueChanged` frame to an account configuration.
+
+    The frame names a deviceProperties entry by its index in the account's
+    deviceProperties list, e.g.
+    {"functionName": "valueChanged", "itemName": "deviceProperties",
+     "index": 0, "parameterName": "actualFanSpeedInlet", "value": 70}.
+    Returns the updated configuration (new dicts, the input is untouched),
+    or None when the frame is something else or changes nothing.
+    """
+    if frame.get("functionName") != "valueChanged" or frame.get("itemName") != "deviceProperties":
+        return None
+    index = frame.get("index")
+    parameter = frame.get("parameterName")
+    devices = data.get("deviceProperties")
+    if (
+        not isinstance(index, int)
+        or not isinstance(parameter, str)
+        or not isinstance(devices, list)
+        or not 0 <= index < len(devices)
+    ):
+        return None
+    device = devices[index]
+    value = frame.get("value")
+    if parameter in device and device[parameter] == value:
+        return None
+    new_devices = list(devices)
+    new_devices[index] = {**device, parameter: value}
+    return {**data, "deviceProperties": new_devices}
 
 
 class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -59,6 +96,8 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Per-device choice of how long a level set from HA holds, kept by
         # the "manual level duration" select (restored across restarts).
         self.manual_duration: dict[str, str] = {}
+        # Serials whose bridge connection for live updates is currently up.
+        self.live_connected: set[str] = set()
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
@@ -67,6 +106,84 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise ConfigEntryAuthFailed(str(err)) from err
         except VascoError as err:
             raise UpdateFailed(str(err)) from err
+
+    @callback
+    def async_start_live_updates(self) -> None:
+        """Listen on each bridge's WebSocket and apply the pushed changes.
+
+        Changes then show up within a second or two, including ones made
+        from the official app or the RF remote, instead of on the next poll.
+        Regular polling keeps running as a fallback and to pick up fields the
+        bridge doesn't push. One connection per bridge; the tasks end when the
+        config entry is unloaded.
+        """
+        listeners: dict[str, str] = {}
+        for device in ventilation_devices(self.data):
+            try:
+                bridge = find_bridge(self.data, device)
+            except VascoError as err:
+                _LOGGER.debug("no live updates for %s: %s", device.get("serial"), err)
+                continue
+            listeners.setdefault(str(bridge.get("bridgeToken")), device["serial"])
+        for serial in listeners.values():
+            self.config_entry.async_create_background_task(
+                self.hass, self._async_live_loop(serial), f"{DOMAIN} live updates {serial}"
+            )
+
+    async def _async_live_loop(self, serial: str) -> None:
+        """Keep the live-updates connection up, reconnecting with backoff."""
+        backoff = _LIVE_BACKOFF_MIN
+        while True:
+            started = time.monotonic()
+            try:
+                device = self.device_by_serial(serial)
+                await self.client.async_listen(
+                    self.data,
+                    device,
+                    self._async_handle_frame,
+                    lambda: self._async_live_connected(serial),
+                )
+                reason = "closed by the server"
+            except VascoAuthError as err:
+                # Polling raises reauth for bad credentials; don't hammer
+                # the login endpoint from here meanwhile.
+                reason = str(err)
+                backoff = _LIVE_BACKOFF_MAX
+            except VascoError as err:
+                reason = str(err)
+            self.live_connected.discard(serial)
+            if time.monotonic() - started >= _LIVE_STABLE:
+                backoff = _LIVE_BACKOFF_MIN
+            _LOGGER.debug(
+                "live updates for %s disconnected after %.0fs (%s); reconnecting in %ss",
+                serial,
+                time.monotonic() - started,
+                reason,
+                backoff,
+            )
+            await asyncio.sleep(backoff)
+            backoff = min(backoff * 2, _LIVE_BACKOFF_MAX)
+
+    @callback
+    def _async_live_connected(self, serial: str) -> None:
+        _LOGGER.debug("live updates for %s connected", serial)
+        self.live_connected.add(serial)
+
+    @callback
+    def _async_handle_frame(self, frame: dict[str, Any]) -> None:
+        """Apply one pushed frame and notify the entities.
+
+        Sets data directly instead of async_set_updated_data(): that would
+        reschedule the next poll on every frame, and frames arrive often
+        enough (temperatures) that polling would never run.
+        """
+        if self.data is None:
+            return
+        updated = apply_value_changed(self.data, frame)
+        if updated is None:
+            return
+        self.data = updated
+        self.async_update_listeners()
 
     def device_by_serial(self, serial: str) -> dict[str, Any]:
         """Look up a ventilation device in the last-known configuration."""

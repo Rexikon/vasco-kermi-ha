@@ -11,7 +11,12 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import VascoApiClient
-from .const import CONF_SCAN_INTERVAL_SECONDS, DEFAULT_SCAN_INTERVAL
+from .const import (
+    CONF_LIVE_UPDATES,
+    CONF_SCAN_INTERVAL_SECONDS,
+    DEFAULT_LIVE_UPDATES,
+    DEFAULT_SCAN_INTERVAL,
+)
 from .coordinator import VascoConfigEntry, VascoCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,6 +51,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: VascoConfigEntry) -> boo
     _async_remove_stale_fan_entities(hass, entry)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    if entry.options.get(CONF_LIVE_UPDATES, DEFAULT_LIVE_UPDATES):
+        coordinator.async_start_live_updates()
     return True
 
 

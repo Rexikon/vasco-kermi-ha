@@ -33,7 +33,11 @@
       "init": {
         "title": "Opcje Vasco/Kermi Ventilation",
         "data": {
-          "scan_interval_seconds": "Interwał odpytywania (sekundy)"
+          "scan_interval_seconds": "Interwał odpytywania (sekundy)",
+          "live_updates": "Aktualizacje na żywo"
+        },
+        "data_description": {
+          "live_updates": "Utrzymuj połączenie z mostkiem i pokazuj zmiany (także z aplikacji lub pilota) w ciągu kilku sekund. Odpytywanie działa dalej jako zapas."
         }
       }
     }

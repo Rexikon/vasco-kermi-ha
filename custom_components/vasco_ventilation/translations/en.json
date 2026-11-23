@@ -33,7 +33,11 @@
       "init": {
         "title": "Vasco/Kermi Ventilation options",
         "data": {
-          "scan_interval_seconds": "Poll interval (seconds)"
+          "scan_interval_seconds": "Poll interval (seconds)",
+          "live_updates": "Live updates"
+        },
+        "data_description": {
+          "live_updates": "Stay connected to the bridge and show changes (including ones from the app or the remote) within seconds. Polling keeps running as a fallback."
         }
       }
     }

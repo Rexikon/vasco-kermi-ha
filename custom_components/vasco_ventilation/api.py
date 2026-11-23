@@ -23,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from collections.abc import Callable
 from typing import Any
 
 import aiohttp
@@ -46,6 +47,9 @@ _LOGGER = logging.getLogger(__name__)
 _HEADERS = {"Content-Type": "application/json", "User-Agent": USER_AGENT}
 _REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30)
 _WS_TIMEOUT = 15
+# Ping interval for the long-lived listening connection, so a silently
+# dropped connection (NAT timeout, bridge offline) is noticed and redone.
+_WS_HEARTBEAT = 55
 
 
 def ventilation_devices(config: dict[str, Any]) -> list[dict[str, Any]]:
@@ -159,12 +163,68 @@ class VascoApiClient:
             await self.async_login()
             await self._ws_write(config, device, parameter, value)
 
+    async def async_listen(
+        self,
+        config: dict[str, Any],
+        device: dict[str, Any],
+        on_frame: Callable[[dict[str, Any]], None],
+        on_connected: Callable[[], None] | None = None,
+    ) -> None:
+        """Stay connected to the device's bridge WebSocket and pass every
+        JSON frame it pushes to on_frame, until the connection closes.
+
+        The bridge pushes a `valueChanged` frame for each property that
+        changes on the unit (temperatures, fan speeds, level, timers, ...),
+        whoever caused the change: the official app, the RF remote, the
+        schedule or this integration. Returns when the server closes the
+        connection; raises VascoConnectionError (VascoBridgeRejectedError
+        when the bridge refuses the handshake) on failure.
+        """
+        if self._token is None:
+            await self.async_login()
+        try:
+            await self._ws_listen(config, device, on_frame, on_connected)
+        except VascoBridgeRejectedError:
+            _LOGGER.debug("bridge rejected the listening connection; logging in again")
+            self._token = None
+            await self.async_login()
+            await self._ws_listen(config, device, on_frame, on_connected)
+
+    async def _ws_listen(
+        self,
+        config: dict[str, Any],
+        device: dict[str, Any],
+        on_frame: Callable[[dict[str, Any]], None],
+        on_connected: Callable[[], None] | None,
+    ) -> None:
+        url, params = self._ws_target(config, device)
+        try:
+            async with self._session.ws_connect(url, params=params, heartbeat=_WS_HEARTBEAT) as ws:
+                async with asyncio.timeout(_WS_TIMEOUT):
+                    await _ws_handshake(ws)
+                if on_connected is not None:
+                    on_connected()
+                async for msg in ws:
+                    frame = _decode_ws_json(msg)
+                    if frame is not None:
+                        on_frame(frame)
+        except TimeoutError as err:
+            raise VascoConnectionError("bridge did not confirm the WebSocket connection") from err
+        except (aiohttp.ClientError, OSError) as err:
+            raise VascoConnectionError(f"WebSocket connection failed: {err}") from err
+
+    def _ws_target(
+        self, config: dict[str, Any], device: dict[str, Any]
+    ) -> tuple[str, dict[str, str]]:
+        """The bridge WebSocket URL and query parameters for a device."""
+        bridge = find_bridge(config, device)
+        url = bridge["appServerURL"].replace("ws://", "wss://")
+        return url, {"bridgeToken": bridge["bridgeToken"], "userToken": self._token or ""}
+
     async def _ws_write(
         self, config: dict[str, Any], device: dict[str, Any], parameter: str, value: int
     ) -> None:
-        bridge = find_bridge(config, device)
-        url = bridge["appServerURL"].replace("ws://", "wss://")
-        params = {"bridgeToken": bridge["bridgeToken"], "userToken": self._token}
+        url, params = self._ws_target(config, device)
 
         # Round-trip the device object as received (apart from
         # manualSettingActiveTill, set by async_set_level like the app
@@ -192,23 +252,7 @@ class VascoApiClient:
         try:
             async with asyncio.timeout(_WS_TIMEOUT):
                 async with self._session.ws_connect(url, params=params) as ws:
-                    ready = False
-                    async for msg in ws:
-                        frame = _decode_ws_json(msg)
-                        if frame is None:
-                            continue
-                        if frame.get("functionName") == "connectionStatus":
-                            if frame.get("status") != "OK":
-                                raise VascoBridgeRejectedError(
-                                    "bridge rejected the WebSocket connection: "
-                                    f"{frame.get('status')}"
-                                )
-                            ready = True
-                            break
-                    if not ready:
-                        raise VascoConnectionError(
-                            "bridge closed the WebSocket before it was ready"
-                        )
+                    await _ws_handshake(ws)
 
                     await ws.send_bytes(account_properties_changed.encode())
                     await ws.send_bytes(write_data.encode())
@@ -298,6 +342,20 @@ def _is_auth_error(error_code: str) -> bool:
     if "TOO_MANY" in code:
         return False
     return any(kw in code for kw in ("LOGIN", "TOKEN", "AUTH", "NOT_VERIFIED"))
+
+
+async def _ws_handshake(ws: aiohttp.ClientWebSocketResponse) -> None:
+    """Wait for the bridge's connectionStatus frame after connecting."""
+    async for msg in ws:
+        frame = _decode_ws_json(msg)
+        if frame is None or frame.get("functionName") != "connectionStatus":
+            continue
+        if frame.get("status") != "OK":
+            raise VascoBridgeRejectedError(
+                f"bridge rejected the WebSocket connection: {frame.get('status')}"
+            )
+        return
+    raise VascoConnectionError("bridge closed the WebSocket before it was ready")
 
 
 def _decode_ws_json(msg: aiohttp.WSMessage) -> dict[str, Any] | None:

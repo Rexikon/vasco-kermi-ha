@@ -38,5 +38,7 @@ async def async_get_config_entry_diagnostics(
     return {
         "entry_data": async_redact_data(dict(entry.data), TO_REDACT),
         "entry_options": dict(entry.options),
+        # Number of bridges the live-updates connection is currently up for.
+        "live_connections": len(coordinator.live_connected),
         "account_configuration": async_redact_data(coordinator.data, TO_REDACT),
     }
