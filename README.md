@@ -30,12 +30,14 @@ endorsed, or supported by Vasco.
   active.
 - **Diagnostics** — download a redacted diagnostics dump from the entry's
   three-dot menu for bug reports.
-- **Live updates** — stays connected to the bridge, the same way the official
-  app does, so changes show up within seconds, including ones made from the
-  app, the RF remote or the schedule. Can be turned off in the integration's
-  Options.
+- **Live updates** — keeps a WebSocket open to the Vasco cloud, which relays
+  your bridge's changes the same way it does for the official app, so changes
+  show up within seconds, including ones made from the app, the RF remote or
+  the schedule. Nothing connects to the bridge on your local network. Can be
+  turned off in the integration's Options.
 - Also polls the account once a minute by default (configurable in the
-  integration's Options), as a fallback and for fields the bridge doesn't push.
+  integration's Options). While live updates are connected, polling slows
+  down to every 5 minutes and only serves as a fallback.
 
 ## Installation
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Rexikon&repository=vasco-kermi-ha&category=Integration)

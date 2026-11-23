@@ -170,8 +170,9 @@ class VascoApiClient:
         on_frame: Callable[[dict[str, Any]], None],
         on_connected: Callable[[], None] | None = None,
     ) -> None:
-        """Stay connected to the device's bridge WebSocket and pass every
-        JSON frame it pushes to on_frame, until the connection closes.
+        """Stay connected to the bridge's WebSocket on the Vasco cloud server
+        (the same relay the official app and writes use) and pass every JSON
+        frame it pushes to on_frame, until the connection closes.
 
         The bridge pushes a `valueChanged` frame for each property that
         changes on the unit (temperatures, fan speeds, level, timers, ...),

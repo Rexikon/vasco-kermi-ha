@@ -37,7 +37,7 @@
           "live_updates": "Aktualizacje na żywo"
         },
         "data_description": {
-          "live_updates": "Utrzymuj połączenie z mostkiem i pokazuj zmiany (także z aplikacji lub pilota) w ciągu kilku sekund. Odpytywanie działa dalej jako zapas."
+          "live_updates": "Utrzymuj otwarte połączenie z chmurą Vasco, jak oficjalna aplikacja, i pokazuj zmiany (także z aplikacji lub pilota) w ciągu kilku sekund. Gdy działa, odpytywanie zwalnia do co 5 minut i służy jako zapas."
         }
       }
     }

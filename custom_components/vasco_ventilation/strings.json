@@ -37,7 +37,7 @@
           "live_updates": "Live updates"
         },
         "data_description": {
-          "live_updates": "Stay connected to the bridge and show changes (including ones from the app or the remote) within seconds. Polling keeps running as a fallback."
+          "live_updates": "Keep a connection to the Vasco cloud open, like the official app, and show changes (including ones from the app or the remote) within seconds. While it is up, polling slows down to every 5 minutes as a fallback."
         }
       }
     }

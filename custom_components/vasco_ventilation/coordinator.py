@@ -40,6 +40,10 @@ _CONFIRM_POLL_DELAY = 3
 _LIVE_BACKOFF_MIN = 5
 _LIVE_BACKOFF_MAX = 300
 _LIVE_STABLE = 60
+# Poll interval while every live-updates connection is up. Polling then
+# only backs up the pushed values (and picks up fields the bridge doesn't
+# push); it returns to the configured interval when a connection drops.
+LIVE_POLL_INTERVAL = timedelta(minutes=5)
 
 
 def apply_value_changed(data: dict[str, Any], frame: dict[str, Any]) -> dict[str, Any] | None:
@@ -96,8 +100,11 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Per-device choice of how long a level set from HA holds, kept by
         # the "manual level duration" select (restored across restarts).
         self.manual_duration: dict[str, str] = {}
-        # Serials whose bridge connection for live updates is currently up.
+        # Serials whose live-updates connection is currently up, out of the
+        # ones a connection was started for (one per bridge).
         self.live_connected: set[str] = set()
+        self._live_serials: set[str] = set()
+        self._base_interval = update_interval
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
@@ -109,13 +116,17 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     @callback
     def async_start_live_updates(self) -> None:
-        """Listen on each bridge's WebSocket and apply the pushed changes.
+        """Listen for pushed changes and apply them to the data.
+
+        Like the official app, this keeps a WebSocket open to the Vasco cloud
+        server (appServerURL), which relays the frames of the user's bridge;
+        nothing connects to the bridge on the local network.
 
         Changes then show up within a second or two, including ones made
         from the official app or the RF remote, instead of on the next poll.
-        Regular polling keeps running as a fallback and to pick up fields the
-        bridge doesn't push. One connection per bridge; the tasks end when the
-        config entry is unloaded.
+        Polling keeps running as a fallback and to pick up fields that aren't
+        pushed, at LIVE_POLL_INTERVAL while connected. One connection per
+        bridge; the tasks end when the config entry is unloaded.
         """
         listeners: dict[str, str] = {}
         for device in ventilation_devices(self.data):
@@ -126,6 +137,7 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 continue
             listeners.setdefault(str(bridge.get("bridgeToken")), device["serial"])
         for serial in listeners.values():
+            self._live_serials.add(serial)
             self.config_entry.async_create_background_task(
                 self.hass, self._async_live_loop(serial), f"{DOMAIN} live updates {serial}"
             )
@@ -151,7 +163,11 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 backoff = _LIVE_BACKOFF_MAX
             except VascoError as err:
                 reason = str(err)
-            self.live_connected.discard(serial)
+            if serial in self.live_connected:
+                self.live_connected.discard(serial)
+                self._async_apply_poll_interval()
+                # Catch up on anything missed while the connection was down.
+                await self.async_request_refresh()
             if time.monotonic() - started >= _LIVE_STABLE:
                 backoff = _LIVE_BACKOFF_MIN
             _LOGGER.debug(
@@ -168,6 +184,18 @@ class VascoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _async_live_connected(self, serial: str) -> None:
         _LOGGER.debug("live updates for %s connected", serial)
         self.live_connected.add(serial)
+        self._async_apply_poll_interval()
+
+    @callback
+    def _async_apply_poll_interval(self) -> None:
+        """Poll less often while all live-updates connections are up."""
+        if self._live_serials and self._live_serials <= self.live_connected:
+            interval = max(self._base_interval, LIVE_POLL_INTERVAL)
+        else:
+            interval = self._base_interval
+        if interval != self.update_interval:
+            _LOGGER.debug("poll interval now %s", interval)
+            self.update_interval = interval
 
     @callback
     def _async_handle_frame(self, frame: dict[str, Any]) -> None:
