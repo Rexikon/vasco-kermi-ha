@@ -13,6 +13,10 @@ DEFAULT_SCAN_INTERVAL = timedelta(seconds=60)
 MIN_SCAN_INTERVAL = timedelta(seconds=30)
 MAX_SCAN_INTERVAL = timedelta(seconds=600)
 CONF_SCAN_INTERVAL_SECONDS = "scan_interval_seconds"
+# Stay connected to the bridge WebSocket and apply the changes it pushes
+# (see coordinator.py). Polling keeps running as a fallback.
+CONF_LIVE_UPDATES = "live_updates"
+DEFAULT_LIVE_UPDATES = True
 
 # Confirmed live against a real VMD-17RPS01 ("Vasco X500") unit via MITM
 # capture of the official app (2026-08-25): the requestedLevel enum used by

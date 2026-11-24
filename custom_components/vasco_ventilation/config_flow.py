@@ -16,7 +16,12 @@ from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import VascoApiClient, ventilation_devices
-from .const import CONF_SCAN_INTERVAL_SECONDS, DOMAIN
+from .const import (
+    CONF_LIVE_UPDATES,
+    CONF_SCAN_INTERVAL_SECONDS,
+    DEFAULT_LIVE_UPDATES,
+    DOMAIN,
+)
 from .exceptions import VascoApiError, VascoAuthError, VascoConnectionError
 
 _LOGGER = logging.getLogger(__name__)
@@ -114,7 +119,7 @@ class VascoConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class VascoOptionsFlow(OptionsFlow):
-    """Options: how often to poll the account.
+    """Options: how often to poll the account, and live updates.
 
     self.config_entry is provided by Home Assistant; assigning it in
     __init__ raises AttributeError since HA 2025.12.
@@ -124,12 +129,17 @@ class VascoOptionsFlow(OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        current = self.config_entry.options.get(CONF_SCAN_INTERVAL_SECONDS, 60)
+        options = self.config_entry.options
+        current = options.get(CONF_SCAN_INTERVAL_SECONDS, 60)
         schema = vol.Schema(
             {
                 vol.Required(CONF_SCAN_INTERVAL_SECONDS, default=current): vol.All(
                     vol.Coerce(int), vol.Range(min=30, max=600)
-                )
+                ),
+                vol.Required(
+                    CONF_LIVE_UPDATES,
+                    default=options.get(CONF_LIVE_UPDATES, DEFAULT_LIVE_UPDATES),
+                ): bool,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

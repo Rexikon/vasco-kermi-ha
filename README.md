@@ -30,8 +30,14 @@ endorsed, or supported by Vasco.
   active.
 - **Diagnostics** — download a redacted diagnostics dump from the entry's
   three-dot menu for bug reports.
-- Polls the account once a minute by default (configurable in the
-  integration's Options).
+- **Live updates** — keeps a WebSocket open to the Vasco cloud, which relays
+  your bridge's changes the same way it does for the official app, so changes
+  show up within seconds, including ones made from the app, the RF remote or
+  the schedule. Nothing connects to the bridge on your local network. Can be
+  turned off in the integration's Options.
+- Also polls the account once a minute by default (configurable in the
+  integration's Options). While live updates are connected, polling slows
+  down to every 5 minutes and only serves as a fallback.
 
 ## Installation
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Rexikon&repository=vasco-kermi-ha&category=Integration)
@@ -54,8 +60,9 @@ endorsed, or supported by Vasco.
 **Settings → Devices & services → Add integration → Vasco/Kermi Ventilation**,
 then enter the same email and password you use in the official Vasco app.
 
-The polling interval (default 60s, matching the official app) can be changed
-afterwards from the integration's **Configure** button.
+The polling interval (default 60s, matching the official app) and live
+updates (on by default) can be changed afterwards from the integration's
+**Configure** button.
 
 ## Known limitations
 

@@ -33,7 +33,11 @@
       "init": {
         "title": "Opcje Vasco/Kermi Ventilation",
         "data": {
-          "scan_interval_seconds": "Interwał odpytywania (sekundy)"
+          "scan_interval_seconds": "Interwał odpytywania (sekundy)",
+          "live_updates": "Aktualizacje na żywo"
+        },
+        "data_description": {
+          "live_updates": "Utrzymuj otwarte połączenie z chmurą Vasco, jak oficjalna aplikacja, i pokazuj zmiany (także z aplikacji lub pilota) w ciągu kilku sekund. Gdy działa, odpytywanie zwalnia do co 5 minut i służy jako zapas."
         }
       }
     }
